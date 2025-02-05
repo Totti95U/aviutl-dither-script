@@ -1,0 +1,11 @@
+--track0: R,0,100,1
+--track1: G,0,100,1
+--track2: B,0,100,1
+
+require("AUL_DLL_Sample")
+
+local data, w, h = obj.getpixeldata()
+
+AUL_DLL_Sample.mult_color(data, w, h, obj.track0, obj.track1, obj.track2)
+
+obj.putpixeldata(data)

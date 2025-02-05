@@ -8,7 +8,7 @@ struct Pixel_RGBA {
 };
 
 // Main function to call from Lua
-int mult_color(lua_State *L) {
+int wn_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
@@ -39,8 +39,8 @@ static luaL_Reg functions[] = {
 extern "C" {
     // `AUL_DLL_Sample` is a call name from Lua
     // the detail is `http://milkpot.sakura.ne.jp/lua/lua51_manual_ja.html#pdf-require`
-    __declspec(dllexport) int luaopen_AUL_DLL_Sample(lua_State *L) {
-        luaL_register(L, "AUL_DLL_Sample", functions);
+    __declspec(dllexport) int luaopen_DITHERINGS(lua_State *L) {
+        luaL_register(L, "DITHERINGS", functions);
         return 1;
     }
 }
