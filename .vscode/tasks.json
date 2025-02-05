@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile lua DLL library",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                    "-g",
+                    "\"${file}\"", // Input source file
+                    "-shared", // Build a shared library (DLL)
+                    "-o", "\"${fileDirname}/${fileBasenameNoExtension}.dll\"", // Output DLL file
+                    "-I", "\"${workspaceFolder}/src/lua5_1_4_Win32_dll8_lib/include\"", // Include path for Lua headers
+                    "-L", "\"${workspaceFolder}/src/lua5_1_4_Win32_dll8_lib\"", // Library path for Lua binaries
+                    "-llua51" // Link against lua51.lib
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

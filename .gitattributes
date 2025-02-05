@@ -1,0 +1,6 @@
+*.anm linguist-language=Lua
+*.anm linguist-language=Lua
+*.tra linguist-language=Lua
+*.obj linguist-language=Lua
+*.scn linguist-language=Lua
+*.cam linguist-language=Lua
