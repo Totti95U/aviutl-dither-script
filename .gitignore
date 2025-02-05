@@ -1,3 +1,5 @@
 # To distribute
 *.zip
 *.aup
+*.lnk
+*.exe
