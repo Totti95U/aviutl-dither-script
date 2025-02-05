@@ -1,0 +1,17 @@
+@Noise Dither
+--track0:MIX,0,100,100,0.1
+--track1:ŠK’²,2,256,1,1
+--check0:ŽžŠÔ•Ï‰»,0
+
+require("DITHERINGS")
+
+local bool_to_number={ [true]=1, [false]=0 }
+
+local data, w, h = obj.getpixeldata()
+
+local color_num = obj.track1
+local seed = (bool_to_number[obj.check0] * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
+local mix = obj.track0 / 100
+DITHERINGS.wn_dither(data, w, h, mix, color_num, seed)
+
+obj.putpixeldata(data)
