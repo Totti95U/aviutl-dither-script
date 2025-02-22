@@ -143,6 +143,7 @@ int floyd_steinberg_dither(lua_State *L) {
 // Make function list
 static luaL_Reg functions[] = {
     { "wn_dither", wn_dither },
+    { "floyd_steinberg_dither", floyd_steinberg_dither },
     { nullptr, nullptr }
 };
 
