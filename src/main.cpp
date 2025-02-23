@@ -1,10 +1,12 @@
 #include <lua.hpp>
 #include <random>
-#include <bits/stdc++.h>
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define clamp(x) (min(max(x, 0), 255))
+#define mixed(x, y) clamp(x * mix + y * (1.0f - mix))
+
+using namespace std;
 
 struct Pixel_RGBA {
     unsigned char b;
@@ -21,35 +23,40 @@ int wn_dither(lua_State *L) {
 
     float mix = static_cast<float>(lua_tonumber(L, 4));
     int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
-    int delta = 0xff / c_num;
 
     int seed = static_cast<int>(lua_tointeger(L, 6));
-    std::mt19937 mt(seed);
-    std::uniform_int_distribution<int> uni(0, 255);
+    std::default_random_engine mt(seed);
+    std::uniform_real_distribution<float> u_rand(0.0f, 1.0f);
 
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int index = x + w * y;
-            // Channel R
-            int i = pixels[index].r / delta;
-            if (c_num * (pixels[index].r % delta) < uni(mt)) {
-                pixels[index].r = clamp(mix * delta * i + (1 - mix) * pixels[index].r);
+            float r = pixels[index].r / 225.0f;
+            float g = pixels[index].g / 225.0f;
+            float b = pixels[index].b / 225.0f;
+
+            // channel r
+            int r_num = std::floor(r * c_num);
+            if (r * c_num - r_num < u_rand(mt)) {
+                pixels[index].r = mixed(r_num * 0xff / c_num, pixels[index].r);
             } else {
-                pixels[index].r = clamp(mix * delta * (i + 1) + (1 - mix) * pixels[index].r);
+                pixels[index].r = mixed((r_num + 1) * 0xff / c_num, pixels[index].r);
             }
-            // Channel G
-            i = pixels[index].g / delta;
-            if (c_num * (pixels[index].g % delta) < uni(mt)) {
-                pixels[index].g = clamp(mix * delta * i + (1 - mix) * pixels[index].g);
+
+            // channel g
+            int g_num = std::floor(g * c_num);
+            if (g * c_num - g_num < u_rand(mt)) {
+                pixels[index].g = mixed(g_num * 0xff / c_num, pixels[index].g);
             } else {
-                pixels[index].g = clamp(mix * delta * (i + 1) + (1 - mix) * pixels[index].g);
+                pixels[index].g = mixed((g_num + 1) * 0xff / c_num, pixels[index].g);
             }
-            // Channel B
-            i = pixels[index].b / delta;
-            if (c_num * (pixels[index].b % delta) < uni(mt)) {
-                pixels[index].b = clamp(mix * delta * i + (1 - mix) * pixels[index].b);
+
+            // channel b
+            int b_num = std::floor(b * c_num);
+            if (b * c_num - b_num < u_rand(mt)) {
+                pixels[index].b = mixed(b_num * 0xff / c_num, pixels[index].b);
             } else {
-                pixels[index].b = clamp(mix * delta * (i + 1) + (1 - mix) * pixels[index].b);
+                pixels[index].b = mixed((b_num + 1) * 0xff / c_num, pixels[index].b);
             }
         }
     }
@@ -64,78 +71,84 @@ int floyd_steinberg_dither(lua_State *L) {
 
     float mix = static_cast<float>(lua_tonumber(L, 4));
     int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
-    int delta = 0xff / c_num;
 
-    std::vector<std::tuple<float, float, float>> errors(w * h);
+    float* errors;
+    errors = (float*)malloc(sizeof(float) * 3 * w * h);
+    for (int i = 0; i < 3 * w * h; i++) {
+        errors[i] = 0.0f;
+    }
 
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int index = x + w * y;
-            std::tuple<int, int, int> error;
+            float error[3] = { 0.0f, 0.0f, 0.0f };
+            float r = pixels[index].r / 225.0f + errors[0 + 3 * index];
+            float g = pixels[index].g / 225.0f + errors[1 + 3 * index];
+            float b = pixels[index].b / 225.0f + errors[2 + 3 * index];
 
-            // Channel R
-            float old_r = pixels[index].r + std::get<0>(errors[index]);
-            int i = old_r / delta;
+            // channel r
             int new_r = 0;
-            if (2 * (old_r - i) < delta) {
-                new_r = clamp(mix * delta * i + (1 - mix) * pixels[index].r);
+            int r_num = std::floor(r * c_num);
+            if (r * c_num - r_num < 0.5f) {
+                new_r = r_num * 0xff / c_num;
             } else {
-                new_r = clamp(mix * delta * (i + 1) + (1 - mix) * pixels[index].r);
+                new_r = (r_num + 1) * 0xff / c_num;
             }
+            error[0] = r - new_r / 225.0f;
 
-            // Channel G
-            float old_g = pixels[index].g + std::get<1>(errors[index]);
-            i = old_g / delta;
+            // channel g
             int new_g = 0;
-            if (2 * (old_g - i) < delta) {
-                new_g = clamp(mix * delta * i + (1 - mix) * pixels[index].g);
+            int g_num = std::floor(g * c_num);
+            if (g * c_num - g_num < 0.5f) {
+                new_g = g_num * 0xff / c_num;
             } else {
-                new_g = clamp(mix * delta * (i + 1) + (1 - mix) * pixels[index].g);
+                new_g = (g_num + 1) * 0xff / c_num;
             }
+            error[1] = g - new_g / 225.0f;
 
-            // Channel B
-            float old_b = pixels[index].b + std::get<2>(errors[index]);
-            i = old_b / delta;
+            // channel b
             int new_b = 0;
-            if (2 * (old_b - i) < delta) {
-                new_b = clamp(mix * delta * i + (1 - mix) * pixels[index].b);
+            int b_num = std::floor(b * c_num);
+            if (b * c_num - b_num < 0.5f) {
+                new_b = b_num * 0xff / c_num;
             } else {
-                new_b = clamp(mix * delta * (i + 1) + (1 - mix) * pixels[index].b);
+                new_b = (b_num + 1) * 0xff / c_num;
             }
+            error[2] = b - new_b / 225.0f;
 
-            // Error diffusion
-            error = std::make_tuple(
-                old_r - new_r,
-                old_g - new_g,
-                old_b - new_b
-            );
+            pixels[index].r = mixed(new_r, pixels[index].r);
+            pixels[index].g = mixed(new_g, pixels[index].g);
+            pixels[index].b = mixed(new_b, pixels[index].b);
 
+            // error diffusion
             // x + 1, y
-            errors[index + 1] = std::make_tuple(
-                std::get<0>(errors[index + 1]) + std::get<0>(error) * 7 / 16,
-                std::get<1>(errors[index + 1]) + std::get<1>(error) * 7 / 16,
-                std::get<2>(errors[index + 1]) + std::get<2>(error) * 7 / 16
-            );
+            if (x + 1 < w) {
+                errors[0 + 3 * (index + 1)] += error[0] * 7.0f / 16.0f;
+                errors[1 + 3 * (index + 1)] += error[1] * 7.0f / 16.0f;
+                errors[2 + 3 * (index + 1)] += error[2] * 7.0f / 16.0f;
+            }
             // x - 1, y + 1
-            errors[index + w - 1] = std::make_tuple(
-                std::get<0>(errors[index + w - 1]) + std::get<0>(error) * 3 / 16,
-                std::get<1>(errors[index + w - 1]) + std::get<1>(error) * 3 / 16,
-                std::get<2>(errors[index + w - 1]) + std::get<2>(error) * 3 / 16
-            );
+            if (x - 1 >= 0 && y + 1 < h) {
+                errors[0 + 3 * (index - 1 + w)] += error[0] * 3.0f / 16.0f;
+                errors[1 + 3 * (index - 1 + w)] += error[1] * 3.0f / 16.0f;
+                errors[2 + 3 * (index - 1 + w)] += error[2] * 3.0f / 16.0f;
+            }
             // x, y + 1
-            errors[index + w] = std::make_tuple(
-                std::get<0>(errors[index + w]) + std::get<0>(error) * 5 / 16,
-                std::get<1>(errors[index + w]) + std::get<1>(error) * 5 / 16,
-                std::get<2>(errors[index + w]) + std::get<2>(error) * 5 / 16
-            );
+            if (y + 1 < h) {
+                errors[0 + 3 * (index + w)] += error[0] * 5.0f / 16.0f;
+                errors[1 + 3 * (index + w)] += error[1] * 5.0f / 16.0f;
+                errors[2 + 3 * (index + w)] += error[2] * 5.0f / 16.0f;
+            }
             // x + 1, y + 1
-            errors[index + w + 1] = std::make_tuple(
-                std::get<0>(errors[index + w + 1]) + std::get<0>(error) * 1 / 16,
-                std::get<1>(errors[index + w + 1]) + std::get<1>(error) * 1 / 16,
-                std::get<2>(errors[index + w + 1]) + std::get<2>(error) * 1 / 16
-            );
+            if (x + 1 < w && y + 1 < h) {
+                errors[0 + 3 * (index + 1 + w)] += error[0] * 1.0f / 16.0f;
+                errors[1 + 3 * (index + 1 + w)] += error[1] * 1.0f / 16.0f;
+                errors[2 + 3 * (index + 1 + w)] += error[2] * 1.0f / 16.0f;
+            }
         }
     }
+
+    free(errors);
 
     return 0;
 }

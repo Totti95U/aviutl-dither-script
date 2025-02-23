@@ -1,9 +1,15 @@
-@Noise Dither
+--[[
+# メモ
+--項目： 名前, 最小値, 最大値, デフォルト値, ステップ
+]]
+---------------------------------------------------
+@NoiseDither
 --track0:MIX,0,100,100,0.1
---track1:階調,2,256,1,1
+--track1:色数,2,256,2,1
 --check0:時間変化,0
+---------------------------------------------------
 
-require("DITHERING")
+require("DITHERINGS")
 
 local bool_to_number={ [true]=1, [false]=0 }
 
@@ -16,10 +22,11 @@ DITHERINGS.wn_dither(data, w, h, mix, color_num, seed)
 
 obj.putpixeldata(data)
 
-@Error Diffusion Dither
+---------------------------------------------------
+@ErrorDiffusionDither
 --track0:MIX,0,100,100,0.1
---track1:階調,2,256,1,1
---check0:時間変化,0
+--track1:色数,2,256,2,1
+---------------------------------------------------
 
 require("DITHERINGS")
 
