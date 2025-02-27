@@ -1,52 +1,14 @@
 --[[
-# ????
---????F ???O, ????l, ???l, ?f?t?H???g?l, ?X?e?b?v
+# メモ
+--トラック:名前,最小値,最大値,デフォルト値,ステップ
 ]]
----------------------------------------------------
-@NoiseDither
---track0:MIX,0,100,100,0.1
---track1:?F??,2,256,2,1
---check0:????ω?,0
----------------------------------------------------
-
-require("DITHERINGS")
-
-local bool_to_number={ [true]=1, [false]=0 }
-
-local data, w, h = obj.getpixeldata()
-
-local color_num = obj.track1
-local seed = (bool_to_number[obj.check0] * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
-local mix = obj.track0 / 100
-DITHERINGS.wn_dither(data, w, h, mix, color_num, seed)
-
-obj.putpixeldata(data)
-
----------------------------------------------------
-@ErrorDiffusionDither
---track0:MIX,0,100,100,0.1
---track1:?F??,2,256,2,1
----------------------------------------------------
-
-require("DITHERINGS")
-
-local bool_to_number={ [true]=1, [false]=0 }
-
-local data, w, h = obj.getpixeldata()
-
-local color_num = obj.track1
-local mix = obj.track0 / 100
-DITHERINGS.floyd_steinberg_dither(data, w, h, mix, color_num)
-
-obj.putpixeldata(data)
-
 ---------------------------------------------------
 @ErrorNoisyDither
 --track0:MIX,0,100,100,0.1
---track1:?F??,2,256,2,1
---track2:?m?C?Y?^?C?v,0,5,1,1
---track3:?`???^?C?v,0,5,1,1
---check0:????ω?,0
+--track1:色数,2,256,2,1
+--track2:ノイズ,0,5,1,1
+--track3:伝搬,0,5,1,1
+--check0:時間変化,0
 ---------------------------------------------------
 
 require("DITHERINGS")
