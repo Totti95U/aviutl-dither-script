@@ -15,7 +15,7 @@ struct Pixel_RGBA {
     unsigned char a;
 };
 
-std::uniform_real_distribution<float> U_RAND(0.0f, 1.0f);
+std::uniform_real_distribution<float> U_RAND(-0.5f, 0.5f);
 
 /*==================== Error diffusion NOISY dithering ====================*/
 
@@ -29,14 +29,14 @@ void noises(std::default_random_engine& mt, float* channel, int noise_type) {
             channel[0] = tmp;
             channel[1] = tmp;
             channel[2] = tmp;
-            break;
+            return;
         // Uniformly on [0.5, 1)
         // All channels are distinct
         case 2:
             channel[0] = U_RAND(mt);
             channel[1] = U_RAND(mt);
             channel[2] = U_RAND(mt);
-            break;
+            return;
         // TODO: implement using blue noise
         case 3:
             return;
@@ -45,10 +45,10 @@ void noises(std::default_random_engine& mt, float* channel, int noise_type) {
             return;
         // constant
         default:
-            channel[0] = 0.5f;
-            channel[1] = 0.5f;
-            channel[2] = 0.5f;
-            break;
+            channel[0] = 0.0f;
+            channel[1] = 0.0f;
+            channel[2] = 0.0f;
+            return;
     }
 
     return;
@@ -130,7 +130,7 @@ int noisy_error_diffusion_dither(lua_State *L) {
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
 
-    float mix = static_cast<float>(lua_tonumber(L, 4));
+    float noise_amp = static_cast<float>(lua_tonumber(L, 4));
     int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
 
     int seed = static_cast<int>(lua_tointeger(L, 6));
@@ -153,42 +153,35 @@ int noisy_error_diffusion_dither(lua_State *L) {
             float g = pixels[index].g / 225.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 225.0f + errors[2 + 3 * index];
 
-            float noise[3] = { 0.5f, 0.5f, 0.5f };
+            float noise[3] = { 0.0f, 0.0f, 0.0f };
             noises(mt, noise, noise_type);
 
             // channel r
-            int new_r = 0;
             int r_num = std::floor(r * c_num);
-            if (r * c_num - r_num < noise[0]) {
-                new_r = r_num * 0xff / c_num;
+            if (r * c_num - r_num < noise_amp * noise[0] + 0.5f) {
+                pixels[index].r = clamp(r_num * 0xff / c_num);
             } else {
-                new_r = (r_num + 1) * 0xff / c_num;
+                pixels[index].r = clamp((r_num + 1) * 0xff / c_num);
             }
-            error[0] = r - new_r / 225.0f;
+            error[0] = r - pixels[index].r / 225.0f;
 
             // channel g
-            int new_g = 0;
             int g_num = std::floor(g * c_num);
-            if (g * c_num - g_num < noise[1]) {
-                new_g = g_num * 0xff / c_num;
+            if (g * c_num - g_num < noise_amp * noise[1] + 0.5f) {
+                pixels[index].g = clamp(g_num * 0xff / c_num);
             } else {
-                new_g = (g_num + 1) * 0xff / c_num;
+                pixels[index].g = clamp((g_num + 1) * 0xff / c_num);
             }
-            error[1] = g - new_g / 225.0f;
+            error[1] = g - pixels[index].g / 225.0f;
 
             // channel b
-            int new_b = 0;
             int b_num = std::floor(b * c_num);
-            if (b * c_num - b_num < noise[2]) {
-                new_b = b_num * 0xff / c_num;
+            if (b * c_num - b_num < noise_amp * noise[2] + 0.5f) {
+                pixels[index].b = clamp(b_num * 0xff / c_num);
             } else {
-                new_b = (b_num + 1) * 0xff / c_num;
+                pixels[index].b = clamp((b_num + 1) * 0xff / c_num);
             }
-            error[2] = b - new_b / 225.0f;
-
-            pixels[index].r = mixed(new_r, pixels[index].r);
-            pixels[index].g = mixed(new_g, pixels[index].g);
-            pixels[index].b = mixed(new_b, pixels[index].b);
+            error[2] = b - pixels[index].b / 225.0f;
 
             // error diffusion
             diffuse_error(errors, error, x, y, w, h, diffusion_type);
