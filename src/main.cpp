@@ -69,7 +69,7 @@ void diffuse_at(float* errors, float* error, int w, int h, int x, int y, float r
 void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int diffusion_type){
     switch (diffusion_type) {
     // Floyd-Steinberg
-    case 1:
+    case 4:
         // x + 1, y
         diffuse_at(errors, error, w, h, x + 1, y, 7.0f / 16.0f);
         // x - 1, y + 1
@@ -89,7 +89,7 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         diffuse_at(errors, error, w, h, x + 1, y + 1, 2.0f / 8.0f);
         break;
     // Jarvis, Judice, and Ninke
-    case 3:
+    case 9:
         // x + 1, y
         diffuse_at(errors, error, w, h, x + 1, y, 7.0f / 48.0f);
         // x + 2, y
@@ -116,7 +116,7 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         diffuse_at(errors, error, w, h, x + 2, y + 2, 1.0f / 48.0f);
         break;
     // Stucki
-    case 4:
+    case 8:
         // x + 1, y
         diffuse_at(errors, error, w, h, x + 1, y, 8.0f / 42.0f);
         // x + 2, y
@@ -143,7 +143,7 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         diffuse_at(errors, error, w, h, x + 2, y + 2, 1.0f / 42.0f);
         break;
     // Atkinson
-    case 5:
+    case 3:
         // x + 1, y
         diffuse_at(errors, error, w, h, x + 1, y, 1.0f / 8.0f);
         // x + 2, y
@@ -198,7 +198,7 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         diffuse_at(errors, error, w, h, x + 1, y + 2, 2.0f / 32.0f);
         break;
     // Two-row Sierra
-    case 8:
+    case 5:
         // x + 1, y
         diffuse_at(errors, error, w, h, x + 1, y, 4.0f / 16.0f);
         // x + 2, y
@@ -215,7 +215,7 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         diffuse_at(errors, error, w, h, x + 2, y + 1, 1.0f / 16.0f);
         break;
     // Sierra Lite
-    case 9:
+    case 1:
         // x + 1, y
         diffuse_at(errors, error, w, h, x + 1, y, 2.0f / 4.0f);
         // x - 1, y + 1
