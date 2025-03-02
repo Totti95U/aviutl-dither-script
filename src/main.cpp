@@ -115,6 +115,34 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         // x + 2, y + 2
         diffuse_at(errors, error, w, h, x + 2, y + 2, 1.0f / 48.0f);
         break;
+    // Stucki
+    case 4:
+        // x + 1, y
+        diffuse_at(errors, error, w, h, x + 1, y, 8.0f / 42.0f);
+        // x + 2, y
+        diffuse_at(errors, error, w, h, x + 2, y, 4.0f / 42.0f);
+        // x - 2, y + 1
+        diffuse_at(errors, error, w, h, x - 2, y + 1, 2.0f / 42.0f);
+        // x - 1, y + 1
+        diffuse_at(errors, error, w, h, x - 1, y + 1, 4.0f / 42.0f);
+        // x, y + 1
+        diffuse_at(errors, error, w, h, x, y + 1, 8.0f / 42.0f);
+        // x + 1, y + 1
+        diffuse_at(errors, error, w, h, x + 1, y + 1, 4.0f / 42.0f);
+        // x + 2, y + 1
+        diffuse_at(errors, error, w, h, x + 2, y + 1, 2.0f / 42.0f);
+        // x - 2, y + 2
+        diffuse_at(errors, error, w, h, x - 2, y + 2, 1.0f / 42.0f);
+        // x - 1, y + 2
+        diffuse_at(errors, error, w, h, x - 1, y + 2, 2.0f / 42.0f);
+        // x, y + 2
+        diffuse_at(errors, error, w, h, x, y + 2, 4.0f / 42.0f);
+        // x + 1, y + 2
+        diffuse_at(errors, error, w, h, x + 1, y + 2, 2.0f / 42.0f);
+        // x + 2, y + 2
+        diffuse_at(errors, error, w, h, x + 2, y + 2, 1.0f / 42.0f);
+        break;
+    // Atkinson
     // no diffusion
     default:
         break;
