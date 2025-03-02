@@ -157,6 +157,23 @@ void diffuse_error(float* errors, float* error, int x, int y, int w, int h, int 
         // x, y + 2
         diffuse_at(errors, error, w, h, x, y + 2, 1.0f / 8.0f);
         break;
+    // Burkes
+    case 6:
+        // x + 1, y
+        diffuse_at(errors, error, w, h, x + 1, y, 8.0f / 32.0f);
+        // x + 2, y
+        diffuse_at(errors, error, w, h, x + 2, y, 4.0f / 32.0f);
+        // x - 2, y + 1
+        diffuse_at(errors, error, w, h, x - 2, y + 1, 2.0f / 32.0f);
+        // x - 1, y + 1
+        diffuse_at(errors, error, w, h, x - 1, y + 1, 4.0f / 32.0f);
+        // x, y + 1
+        diffuse_at(errors, error, w, h, x, y + 1, 8.0f / 32.0f);
+        // x + 1, y + 1
+        diffuse_at(errors, error, w, h, x + 1, y + 1, 4.0f / 32.0f);
+        // x + 2, y + 1
+        diffuse_at(errors, error, w, h, x + 2, y + 1, 2.0f / 32.0f);
+        break;
     // no diffusion
     default:
         break;
