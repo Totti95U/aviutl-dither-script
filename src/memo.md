@@ -9,3 +9,15 @@
 - cpp では `整数 / 整数` は整数になる
 - vector は使うな。malloc 使え
 
+誤差伝播の kernel は次の順
+
+0. なし
+1. Sierra Lite
+2. False Floyd-Steinberg
+3. Atkinson
+4. Floyd-Steinberg
+5. Two-row Sierra
+6. Burkes
+7. Sierra
+8. Stucki
+9. Jarvis, Judice, and Ninke
