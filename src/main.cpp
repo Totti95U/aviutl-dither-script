@@ -49,11 +49,17 @@ struct Pixel_RGBA {
 };
 
 std::uniform_real_distribution<float> U_RAND(-0.5f, 0.5f);
+std::uniform_int_distribution<int> channel_RAND(0, 2);
+std::uniform_int_distribution<int> comb_RAND(0, 5);
+std::uniform_int_distribution<int> I_RAND(0, 2048 * 2048 - 1);
+
+int USE_CHANNEL = 3;
+int USE_COMB = 0;
 
 /*==================== Error diffusion NOISY dithering ====================*/
 
 // Noise selecting function
-void noises(std::default_random_engine& mt, float* channel, int noise_type, int x, int y, Pixel_RGBA* texture, int t_w, int t_h) {
+void noises(std::default_random_engine& mt, float* channel, int noise_type, Pixel_RGB* texture, int t_index) {
     float tmp = U_RAND(mt);
 
     if (noise_type == 1){
@@ -73,17 +79,49 @@ void noises(std::default_random_engine& mt, float* channel, int noise_type, int 
     } else if (noise_type == 3) {
         // TODO: implement using blue noise
         // Blue noise (all channel use same value)
-        int t_index = x % t_w + t_w * (y % t_h);
-        channel[0] = texture[t_index].r / 255.0f - 0.5f;
-        channel[1] = texture[t_index].r / 255.0f - 0.5f;
-        channel[2] = texture[t_index].r / 255.0f - 0.5f;
+        float error = 0.0f;
+        if (USE_CHANNEL == 0) {
+            error = texture[t_index].r / 255.0f - 0.5f;
+        } else if (USE_CHANNEL == 1) {
+            error = texture[t_index].g / 255.0f - 0.5f;
+        } else {
+            error = texture[t_index].b / 255.0f - 0.5f;
+        }
+        channel[0] = error;
+        channel[1] = error;
+        channel[2] = error;
         return;
     } else if (noise_type == 4) {
         // Blue noise (all channel use different value)
-        int t_index = x % t_w + t_w * (y % t_h);
-        channel[0] = texture[t_index].r / 255.0f - 0.5f;
-        channel[1] = texture[t_index].g / 255.0f - 0.5f;
-        channel[2] = texture[t_index].b / 255.0f - 0.5f;
+        float errors[3];
+        if (USE_COMB == 0) {
+            errors[0] = texture[t_index].r / 255.0f - 0.5f;
+            errors[1] = texture[t_index].g / 255.0f - 0.5f;
+            errors[2] = texture[t_index].b / 255.0f - 0.5f;
+        } else if (USE_COMB == 1) {
+            errors[0] = texture[t_index].r / 255.0f - 0.5f;
+            errors[1] = texture[t_index].b / 255.0f - 0.5f;
+            errors[2] = texture[t_index].g / 255.0f - 0.5f;
+        } else if (USE_COMB == 2) {
+            errors[0] = texture[t_index].g / 255.0f - 0.5f;
+            errors[1] = texture[t_index].r / 255.0f - 0.5f;
+            errors[2] = texture[t_index].b / 255.0f - 0.5f;
+        } else if (USE_COMB == 3) {
+            errors[0] = texture[t_index].g / 255.0f - 0.5f;
+            errors[1] = texture[t_index].b / 255.0f - 0.5f;
+            errors[2] = texture[t_index].r / 255.0f - 0.5f;
+        } else if (USE_COMB == 4) {
+            errors[0] = texture[t_index].b / 255.0f - 0.5f;
+            errors[1] = texture[t_index].r / 255.0f - 0.5f;
+            errors[2] = texture[t_index].g / 255.0f - 0.5f;
+        } else {
+            errors[0] = texture[t_index].b / 255.0f - 0.5f;
+            errors[1] = texture[t_index].g / 255.0f - 0.5f;
+            errors[2] = texture[t_index].r / 255.0f - 0.5f;
+        }
+        channel[0] = errors[0];
+        channel[1] = errors[1];
+        channel[2] = errors[2];
         return;
     } else if (noise_type == 5) {
         // Bayer matrix
@@ -288,9 +326,14 @@ int noisy_error_diffusion_dither(lua_State *L) {
     int noise_type = static_cast<int>(lua_tointeger(L, 7));
     int diffusion_type = static_cast<int>(lua_tointeger(L, 8));
 
-    Pixel_RGBA *texture = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 9));
-    int t_w = static_cast<int>(lua_tointeger(L, 10));
-    int t_h = static_cast<int>(lua_tointeger(L, 11));
+    char texture_path[512];
+    sprintf(texture_path, "%s", lua_tostring(L, 9));
+    int t_w, t_h;
+    Pixel_RGB *texture = read_txr(texture_path, &t_w, &t_h);
+    if (!texture) {
+        perror("Failed to open texture file");
+        return 1;
+    }
 
     float* errors;
     errors = (float*)malloc(sizeof(float) * 3 * w * h);
@@ -299,17 +342,21 @@ int noisy_error_diffusion_dither(lua_State *L) {
     }
 
     std::default_random_engine mt(seed);
+    USE_CHANNEL = channel_RAND(mt);
+    USE_COMB = comb_RAND(mt);
+    int t_offset = I_RAND(mt) % (t_w * t_h);
     
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int index = x + w * y;
+            int t_index = (x % t_w + t_w * (y % t_h) + t_offset) % (t_w * t_h);
             float error[3] = { 0.0f, 0.0f, 0.0f };
             float r = pixels[index].r / 225.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 225.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 225.0f + errors[2 + 3 * index];
 
             float noise[3] = { 0.0f, 0.0f, 0.0f };
-            noises(mt, noise, noise_type, x, y, texture, t_w, t_h);
+            noises(mt, noise, noise_type, texture, t_index);
 
             // channel r
             int r_num = std::floor(r * c_num);
