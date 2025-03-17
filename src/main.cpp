@@ -1,5 +1,6 @@
 #include <lua.hpp>
 #include <random>
+#include <unistd.h>
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -8,6 +9,38 @@
 
 using namespace std;
 
+/*==================== Pixel structure ====================*/
+struct Pixel_RGB {
+    unsigned char r, g, b;
+};
+
+
+
+Pixel_RGB* read_txr(const char* path, int* w, int* h) {
+    // open texture file
+    FILE *file = fopen(path, "rb");
+    if (file == NULL) {
+        perror("Failed to open texture file");
+        return nullptr;
+    }
+
+    // read texture size
+    unsigned char logW, logH;
+    fread(&logW, sizeof(unsigned char), 1, file);
+    fread(&logH, sizeof(unsigned char), 1, file);
+    *w = 1 << logW;
+    *h = 1 << logH;
+    // read texture data
+    Pixel_RGB *texture = (Pixel_RGB*)malloc(sizeof(Pixel_RGB) * *w * *h);
+    if (!texture) {
+        perror("Failed to allocate memory for texture");
+        fclose(file);
+        return nullptr;
+    }
+    fread(texture, sizeof(Pixel_RGB), *w * *h, file);
+    fclose(file);
+    return texture;
+}
 struct Pixel_RGBA {
     unsigned char b;
     unsigned char g;
@@ -20,38 +53,48 @@ std::uniform_real_distribution<float> U_RAND(-0.5f, 0.5f);
 /*==================== Error diffusion NOISY dithering ====================*/
 
 // Noise selecting function
-void noises(std::default_random_engine& mt, float* channel, int noise_type) {
+void noises(std::default_random_engine& mt, float* channel, int noise_type, int x, int y, Pixel_RGBA* texture, int t_w, int t_h) {
     float tmp = U_RAND(mt);
-    switch (noise_type) {
-        // Uniformly on [0, 1)
-        // All channels are same
-        case 1:
-            channel[0] = tmp;
-            channel[1] = tmp;
-            channel[2] = tmp;
-            return;
-        // Uniformly on [0.5, 1)
-        // All channels are distinct
-        case 2:
-            channel[0] = U_RAND(mt);
-            channel[1] = U_RAND(mt);
-            channel[2] = U_RAND(mt);
-            return;
-        // TODO: implement using blue noise
-        case 3:
-            return;
-        // TODO: implement using bayer matrix
-        case 4:
-            return;
-        // constant
-        default:
-            channel[0] = 0.0f;
-            channel[1] = 0.0f;
-            channel[2] = 0.0f;
-            return;
-    }
 
-    return;
+    if (noise_type == 1){
+        // Uniformly on [-0.5, 0.5)
+        // White noise (all channel use same value)
+        channel[0] = tmp;
+        channel[1] = tmp;
+        channel[2] = tmp;
+        return;
+    } else if (noise_type == 2) {
+        // Uniformly on [-0.5, 0.5)
+        // White noise (all channel use different value)
+        channel[0] = U_RAND(mt);
+        channel[1] = U_RAND(mt);
+        channel[2] = U_RAND(mt);
+        return;
+    } else if (noise_type == 3) {
+        // TODO: implement using blue noise
+        // Blue noise (all channel use same value)
+        int t_index = x % t_w + t_w * (y % t_h);
+        channel[0] = texture[t_index].r / 255.0f - 0.5f;
+        channel[1] = texture[t_index].r / 255.0f - 0.5f;
+        channel[2] = texture[t_index].r / 255.0f - 0.5f;
+        return;
+    } else if (noise_type == 4) {
+        // Blue noise (all channel use different value)
+        int t_index = x % t_w + t_w * (y % t_h);
+        channel[0] = texture[t_index].r / 255.0f - 0.5f;
+        channel[1] = texture[t_index].g / 255.0f - 0.5f;
+        channel[2] = texture[t_index].b / 255.0f - 0.5f;
+        return;
+    } else if (noise_type == 5) {
+        // Bayer matrix
+        return;
+    } else {
+        // constant
+        channel[0] = 0.0f;
+        channel[1] = 0.0f;
+        channel[2] = 0.0f;
+        return;
+    }
 }
 
 void diffuse_at(float* errors, float* error, int w, int h, int x, int y, float ratio) {
@@ -245,6 +288,10 @@ int noisy_error_diffusion_dither(lua_State *L) {
     int noise_type = static_cast<int>(lua_tointeger(L, 7));
     int diffusion_type = static_cast<int>(lua_tointeger(L, 8));
 
+    Pixel_RGBA *texture = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 9));
+    int t_w = static_cast<int>(lua_tointeger(L, 10));
+    int t_h = static_cast<int>(lua_tointeger(L, 11));
+
     float* errors;
     errors = (float*)malloc(sizeof(float) * 3 * w * h);
     for (int i = 0; i < 3 * w * h; i++) {
@@ -262,7 +309,7 @@ int noisy_error_diffusion_dither(lua_State *L) {
             float b = pixels[index].b / 225.0f + errors[2 + 3 * index];
 
             float noise[3] = { 0.0f, 0.0f, 0.0f };
-            noises(mt, noise, noise_type);
+            noises(mt, noise, noise_type, x, y, texture, t_w, t_h);
 
             // channel r
             int r_num = std::floor(r * c_num);
@@ -300,9 +347,56 @@ int noisy_error_diffusion_dither(lua_State *L) {
     return 0;
 }
 
+int texture_debug(lua_State *L) {
+    Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
+    int w = static_cast<int>(lua_tointeger(L, 2));
+    int h = static_cast<int>(lua_tointeger(L, 3));
+
+    float noise_amp = static_cast<float>(lua_tonumber(L, 4));
+    int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
+
+    int seed = static_cast<int>(lua_tointeger(L, 6));
+    int noise_type = static_cast<int>(lua_tointeger(L, 7));
+    int diffusion_type = static_cast<int>(lua_tointeger(L, 8));
+
+    // open texture file
+    char texture_path[512];
+    sprintf(texture_path, "%s", lua_tostring(L, 9));
+    int t_w, t_h;
+    Pixel_RGB *texture = read_txr(texture_path, &t_w, &t_h);
+    if (!texture) {
+        return 1;
+    }
+
+    float* errors;
+    errors = (float*)malloc(sizeof(float) * 3 * w * h);
+    for (int i = 0; i < 3 * w * h; i++) {
+        errors[i] = 0.0f;
+    }
+
+    std::default_random_engine mt(seed);
+    
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int index = x + w * y;
+            int t_index = x % t_w + t_w * (y % t_h);
+            if (x < t_w && y < t_h) {
+                pixels[index].r = texture[t_index].r;
+                pixels[index].g = texture[t_index].g;
+                pixels[index].b = texture[t_index].b;
+            }
+        }
+    }
+
+    free(errors);
+    free(texture);
+    return 0;
+}
+
 // Make function list
 static luaL_Reg functions[] = {
     { "uniform_palette_dither", noisy_error_diffusion_dither },
+    { "texture_debug", texture_debug },
     { nullptr, nullptr }
 };
 
