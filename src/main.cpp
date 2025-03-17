@@ -77,7 +77,6 @@ void noises(std::default_random_engine& mt, float* channel, int noise_type, Pixe
         channel[2] = U_RAND(mt);
         return;
     } else if (noise_type == 3) {
-        // TODO: implement using blue noise
         // Blue noise (all channel use same value)
         float error = 0.0f;
         if (USE_CHANNEL == 0) {
@@ -329,10 +328,13 @@ int noisy_error_diffusion_dither(lua_State *L) {
     char texture_path[512];
     sprintf(texture_path, "%s", lua_tostring(L, 9));
     int t_w, t_h;
-    Pixel_RGB *texture = read_txr(texture_path, &t_w, &t_h);
-    if (!texture) {
-        perror("Failed to open texture file");
-        return 1;
+    Pixel_RGB *texture = nullptr;
+    if (noise_type >= 3) {
+        texture = read_txr(texture_path, &t_w, &t_h);
+        if (!texture) {
+            perror("Failed to open texture file");
+            return 1;
+        }
     }
 
     float* errors;
@@ -344,12 +346,15 @@ int noisy_error_diffusion_dither(lua_State *L) {
     std::default_random_engine mt(seed);
     USE_CHANNEL = channel_RAND(mt);
     USE_COMB = comb_RAND(mt);
-    int t_offset = I_RAND(mt) % (t_w * t_h);
+    int t_offset = noise_type < 3 ? 0 : I_RAND(mt) % (t_w * t_h);
     
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int index = x + w * y;
-            int t_index = (x % t_w + t_w * (y % t_h) + t_offset) % (t_w * t_h);
+            int t_index = 0;
+            if (noise_type >= 3) {
+                t_index = (x % t_w + t_w * (y % t_h) + t_offset) % (t_w * t_h);
+            }
             float error[3] = { 0.0f, 0.0f, 0.0f };
             float r = pixels[index].r / 225.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 225.0f + errors[1 + 3 * index];
@@ -391,6 +396,7 @@ int noisy_error_diffusion_dither(lua_State *L) {
     }
 
     free(errors);
+    free(texture);
     return 0;
 }
 

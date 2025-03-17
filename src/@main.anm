@@ -4,12 +4,15 @@
 ]]
 ---------------------------------------------------
 @ErrorNoisyDither
+require("rikky_module")
 --track0:ノイズ強度,0,100,100,0.01
 --track1:色数,2,256,2,1
 --track2:ノイズ,0,5,1,1
 --track3:伝搬,0,9,1,1
---check0:時間変化,0
+--dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; 時間変化/chk, check0=0;
 ---------------------------------------------------
+
+rikky_module.fold(1)
 
 require("DITHERINGS")
 
@@ -20,10 +23,40 @@ local data, w, h = obj.getpixeldata()
 local color_num = obj.track1
 local noise_amp = obj.track0 / 100.0
 local noise_type = obj.track2
+local noise_type_str
 local diffusion_type = obj.track3
 
-local seed = (bool_to_number[obj.check0] * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
+if noise_type == 3 or noise_type == 4 then
+    noise_type_str = "bluenoise"
+elseif noise_type == 5 or noise_type == 6 then
+    noise_type_str = "bayer"
+end
 
-DITHERINGS.uniform_palette_dither(data, w, h, noise_amp, color_num, seed, noise_type, diffusion_type)
+local seed = (check0 * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
+local t_size = tostring(t_size)
+local txr_num = 0;
+if noise_type >= 3 then
+    local txrs = rikky_module.dir(fold .. "\\" .. noise_type_str .. "\\", "txr")
+    for _, p in ipairs(txrs) do
+        -- find full path including "`t_size`x`t_size` - \d+\.txr"
+        if string.find(p, t_size .. "x" .. t_size) ~= nil then
+            txr_num = txr_num + 1
+        end
+    end
+end
+
+local t_id
+if check0 == 0 then
+    t_id = obj.rand(1, txr_num, seed, 1)
+else
+    t_id = obj.rand(1, txr_num, seed)
+end
+
+local t_path = ""
+if noise_type >= 3 then
+    t_path = fold .. "\\" .. noise_type_str .. "\\" .. t_size .. "x" .. t_size .. "-" .. t_id ..".txr"
+end
+
+DITHERINGS.uniform_palette_dither(data, w, h, noise_amp, color_num, seed, noise_type, diffusion_type, t_path)
 
 obj.putpixeldata(data)
