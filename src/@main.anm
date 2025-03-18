@@ -7,9 +7,9 @@
 require("rikky_module")
 --track0:ノイズ強度,0,100,100,0.01
 --track1:色数,2,256,2,1
---track2:ノイズ,0,5,1,1
+--track2:ノイズ,0,6,1,1
 --track3:伝搬,0,9,1,1
---dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; 時間変化/chk, check0=0;
+--dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; 伝搬方向, prop_dir=0; 時間変化/chk, check0=0;
 ---------------------------------------------------
 
 rikky_module.fold(1)
@@ -57,6 +57,10 @@ if noise_type >= 3 then
     t_path = fold .. "\\" .. noise_type_str .. "\\" .. t_size .. "x" .. t_size .. "-" .. t_id ..".txr"
 end
 
-DITHERINGS.uniform_palette_dither(data, w, h, noise_amp, color_num, seed, noise_type, diffusion_type, t_path)
+if noise_type >= 3 and txr_num == 0 then
+    debug_print("Can't open texture file.")
+else
+    DITHERINGS.uniform_palette_dither(data, w, h, noise_amp, color_num, seed, noise_type, diffusion_type, t_path)
+end
 
 obj.putpixeldata(data)

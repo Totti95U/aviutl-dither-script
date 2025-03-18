@@ -59,7 +59,7 @@ int USE_COMB = 0;
 /*==================== Error diffusion NOISY dithering ====================*/
 
 // Noise selecting function
-void noises(std::default_random_engine& mt, float* channel, int noise_type, Pixel_RGB* texture, int t_index) {
+void noises(std::default_random_engine& mt, float* channel, int noise_type, Pixel_RGB* texture, int* t_index) {
     float tmp = U_RAND(mt);
 
     if (noise_type == 1){
@@ -76,54 +76,51 @@ void noises(std::default_random_engine& mt, float* channel, int noise_type, Pixe
         channel[1] = U_RAND(mt);
         channel[2] = U_RAND(mt);
         return;
-    } else if (noise_type == 3) {
-        // Blue noise (all channel use same value)
-        float error = 0.0f;
+    } else if (noise_type == 3 || noise_type == 5) {
+        // use texture (all channel use same value)
+        float threshold = 0.0f;
         if (USE_CHANNEL == 0) {
-            error = texture[t_index].r / 255.0f - 0.5f;
+            threshold = texture[t_index[0]].r;
         } else if (USE_CHANNEL == 1) {
-            error = texture[t_index].g / 255.0f - 0.5f;
+            threshold = texture[t_index[0]].g;
         } else {
-            error = texture[t_index].b / 255.0f - 0.5f;
+            threshold = texture[t_index[0]].b;
         }
-        channel[0] = error;
-        channel[1] = error;
-        channel[2] = error;
+        channel[0] = threshold / 255.0f - 0.5f;
+        channel[1] = threshold / 255.0f - 0.5f;
+        channel[2] = threshold / 255.0f - 0.5f;
         return;
-    } else if (noise_type == 4) {
-        // Blue noise (all channel use different value)
-        float errors[3];
+    } else if (noise_type == 4 || noise_type == 6) {
+        // use texture (all channel use different value)
+        float thresholds[3];
         if (USE_COMB == 0) {
-            errors[0] = texture[t_index].r / 255.0f - 0.5f;
-            errors[1] = texture[t_index].g / 255.0f - 0.5f;
-            errors[2] = texture[t_index].b / 255.0f - 0.5f;
+            thresholds[0] = texture[t_index[0]].r;
+            thresholds[1] = texture[t_index[1]].g;
+            thresholds[2] = texture[t_index[2]].b;
         } else if (USE_COMB == 1) {
-            errors[0] = texture[t_index].r / 255.0f - 0.5f;
-            errors[1] = texture[t_index].b / 255.0f - 0.5f;
-            errors[2] = texture[t_index].g / 255.0f - 0.5f;
+            thresholds[0] = texture[t_index[0]].r;
+            thresholds[1] = texture[t_index[1]].b;
+            thresholds[2] = texture[t_index[2]].g;
         } else if (USE_COMB == 2) {
-            errors[0] = texture[t_index].g / 255.0f - 0.5f;
-            errors[1] = texture[t_index].r / 255.0f - 0.5f;
-            errors[2] = texture[t_index].b / 255.0f - 0.5f;
+            thresholds[0] = texture[t_index[0]].g;
+            thresholds[1] = texture[t_index[1]].r;
+            thresholds[2] = texture[t_index[2]].b;
         } else if (USE_COMB == 3) {
-            errors[0] = texture[t_index].g / 255.0f - 0.5f;
-            errors[1] = texture[t_index].b / 255.0f - 0.5f;
-            errors[2] = texture[t_index].r / 255.0f - 0.5f;
+            thresholds[0] = texture[t_index[0]].g;
+            thresholds[1] = texture[t_index[1]].b;
+            thresholds[2] = texture[t_index[2]].r;
         } else if (USE_COMB == 4) {
-            errors[0] = texture[t_index].b / 255.0f - 0.5f;
-            errors[1] = texture[t_index].r / 255.0f - 0.5f;
-            errors[2] = texture[t_index].g / 255.0f - 0.5f;
+            thresholds[0] = texture[t_index[0]].b;
+            thresholds[1] = texture[t_index[1]].r;
+            thresholds[2] = texture[t_index[2]].g;
         } else {
-            errors[0] = texture[t_index].b / 255.0f - 0.5f;
-            errors[1] = texture[t_index].g / 255.0f - 0.5f;
-            errors[2] = texture[t_index].r / 255.0f - 0.5f;
+            thresholds[0] = texture[t_index[0]].b;
+            thresholds[1] = texture[t_index[1]].g;
+            thresholds[2] = texture[t_index[2]].r;
         }
-        channel[0] = errors[0];
-        channel[1] = errors[1];
-        channel[2] = errors[2];
-        return;
-    } else if (noise_type == 5) {
-        // Bayer matrix
+        channel[0] = thresholds[0] / 255.0f - 0.5f;
+        channel[1] = thresholds[1] / 255.0f - 0.5f;
+        channel[2] = thresholds[2] / 255.0f - 0.5f;
         return;
     } else {
         // constant
@@ -346,14 +343,21 @@ int noisy_error_diffusion_dither(lua_State *L) {
     std::default_random_engine mt(seed);
     USE_CHANNEL = channel_RAND(mt);
     USE_COMB = comb_RAND(mt);
-    int t_offset = noise_type < 3 ? 0 : I_RAND(mt) % (t_w * t_h);
+    int t_offset[3] = { 0, 0, 0 };
+    if (noise_type >= 3) {
+        t_offset[0] = I_RAND(mt) % (t_w * t_h);
+        t_offset[1] = I_RAND(mt) % (t_w * t_h);
+        t_offset[2] = I_RAND(mt) % (t_w * t_h);
+    }
     
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int index = x + w * y;
-            int t_index = 0;
+            int t_index[3] = { 0, 0, 0 };
             if (noise_type >= 3) {
-                t_index = (x % t_w + t_w * (y % t_h) + t_offset) % (t_w * t_h);
+                t_index[0] = (x % t_w + t_w * (y % t_h) + t_offset[0]) % (t_w * t_h);
+                t_index[1] = (x % t_w + t_w * (y % t_h) + t_offset[1]) % (t_w * t_h);
+                t_index[2] = (x % t_w + t_w * (y % t_h) + t_offset[2]) % (t_w * t_h);
             }
             float error[3] = { 0.0f, 0.0f, 0.0f };
             float r = pixels[index].r / 225.0f + errors[0 + 3 * index];
