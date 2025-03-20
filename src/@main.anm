@@ -18,6 +18,7 @@ require("DITHERINGS")
 
 local bool_to_number={ [true]=1, [false]=0 }
 
+obj.effect("ローテーション", "90度回転", prop_dir)
 local data, w, h = obj.getpixeldata()
 
 local color_num = obj.track1
@@ -64,3 +65,5 @@ else
 end
 
 obj.putpixeldata(data)
+
+obj.effect("ローテーション", "90度回転", -prop_dir)
