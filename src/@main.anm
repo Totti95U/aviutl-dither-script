@@ -9,7 +9,7 @@ require("rikky_module")
 --track1:色数,2,256,2,1
 --track2:ノイズ,0,6,1,1
 --track3:伝搬,0,9,1,1
---dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; 伝搬方向, prop_dir=0; 時間変化/chk, check0=0;
+--dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; ドットサイズ, dot_size=1; 伝搬方向, prop_dir=0; 時間変化/chk, check0=0;
 ---------------------------------------------------
 
 rikky_module.fold(1)
@@ -19,6 +19,7 @@ require("DITHERINGS")
 local bool_to_number={ [true]=1, [false]=0 }
 
 obj.effect("ローテーション", "90度回転", prop_dir)
+obj.effect("リサイズ", "拡大率", 100/dot_size, "補間なし", 1)
 local data, w, h = obj.getpixeldata()
 
 local color_num = obj.track1
@@ -67,3 +68,40 @@ end
 obj.putpixeldata(data)
 
 obj.effect("ローテーション", "90度回転", -prop_dir)
+obj.effect("リサイズ", "拡大率", 100 * dot_size, "補間なし", 1)
+---------------------------------------------------
+@CustomNoiseDither
+require("rikky_module")
+--track0:ノイズ強度,0,100,100,0.01
+--track1:X座標,-2000,2000,0,1
+--track2:Y座標,-2000,2000,0,1
+--track3:拡大率,0.0,800.0,100.0,0.01
+--dialog:テクスチャ, txr=""; ドットサイズ, dot_size=1; 伝搬方法, diffusion_type=0; 伝搬方向, prop_dir=0; 色数, color_num=2; 中心座標X, center_x=0; 中心座標Y, center_y=0
+---------------------------------------------------
+rikky_module.file(1)
+rikky_module.list(3, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+
+require("DITHERINGS")
+
+local noise_amp = obj.track0 / 100.0
+local offset_x = obj.track1
+local offset_y = obj.track2
+local scale = obj.track3 / 100.0
+color_num = math.max(2, color_num)
+
+local t_path = txr
+dot_size = math.max(0.01, dot_size)
+obj.effect("リサイズ", "拡大率", 100 / dot_size, "補間なし", 1)
+obj.effect("ローテーション", "90度回転", prop_dir)
+local data, w, h = obj.getpixeldata()
+
+local center_x = math.floor(center_x / dot_size)
+local center_y = math.floor(center_y / dot_size)
+
+DITHERINGS.uniform_palette_custom_dither(data, w, h, noise_amp, color_num, diffusion_type, t_path, offset_x, offset_y, scale, center_x, center_y)
+
+obj.putpixeldata(data)
+
+obj.effect("ローテーション", "90度回転", -prop_dir)
+obj.effect("リサイズ", "拡大率", 100 * dot_size, "補間なし", 1)
+---------------------------------------------------

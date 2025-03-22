@@ -404,6 +404,93 @@ int noisy_error_diffusion_dither(lua_State *L) {
     return 0;
 }
 
+// Custom texture dithering (uniformly distributed color palette version)
+int custom_texture_diffusion_dither(lua_State *L) {
+    Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
+    int w = static_cast<int>(lua_tointeger(L, 2));
+    int h = static_cast<int>(lua_tointeger(L, 3));
+
+    float noise_amp = static_cast<float>(lua_tonumber(L, 4));
+    int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
+
+    int diffusion_type = static_cast<int>(lua_tointeger(L, 6));
+
+    char texture_path[512];
+    sprintf(texture_path, "%s", lua_tostring(L, 7));
+    int t_w, t_h;
+    Pixel_RGB *texture = nullptr;
+    texture = read_txr(texture_path, &t_w, &t_h);
+    if (!texture || t_w * t_h == 0) {
+        perror("Failed to open texture file");
+        return 1;
+    }
+
+    int t_x = static_cast<int>(lua_tointeger(L, 8));
+    int t_y = static_cast<int>(lua_tointeger(L, 9));
+    float t_scale = static_cast<float>(lua_tonumber(L, 10));
+    int center_x = static_cast<int>(lua_tointeger(L, 11)) + w / 2;
+    int center_y = static_cast<int>(lua_tointeger(L, 12)) + h / 2;
+
+    if (t_scale == 0.0f) {
+        perror("Invalid scale");
+        return 1;
+    }
+
+    float* errors;
+    errors = (float*)malloc(sizeof(float) * 3 * w * h);
+    for (int i = 0; i < 3 * w * h; i++) {
+        errors[i] = 0.0f;
+    }
+    
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int index = x + w * y;
+            float scaled_x = (x - center_x) / t_scale + center_x;
+            float scaled_y = (y - center_y) / t_scale + center_y;
+            int t_index = static_cast<int>(scaled_x - t_x) % t_w + t_w * (static_cast<int>(scaled_y - t_y) % t_h);
+            
+            float error[3] = { 0.0f, 0.0f, 0.0f };
+            float r = pixels[index].r / 225.0f + errors[0 + 3 * index];
+            float g = pixels[index].g / 225.0f + errors[1 + 3 * index];
+            float b = pixels[index].b / 225.0f + errors[2 + 3 * index];
+
+            // channel r
+            int r_num = std::floor(r * c_num);
+            if (r * c_num - r_num < noise_amp * texture[t_index].r / 255.0f) {
+                pixels[index].r = clamp(r_num * 0xff / c_num);
+            } else {
+                pixels[index].r = clamp((r_num + 1) * 0xff / c_num);
+            }
+            error[0] = r - pixels[index].r / 225.0f;
+
+            // channel g
+            int g_num = std::floor(g * c_num);
+            if (g * c_num - g_num < noise_amp * texture[t_index].g / 255.0f) {
+                pixels[index].g = clamp(g_num * 0xff / c_num);
+            } else {
+                pixels[index].g = clamp((g_num + 1) * 0xff / c_num);
+            }
+            error[1] = g - pixels[index].g / 225.0f;
+
+            // channel b
+            int b_num = std::floor(b * c_num);
+            if (b * c_num - b_num < noise_amp * texture[t_index].b / 255.0f) {
+                pixels[index].b = clamp(b_num * 0xff / c_num);
+            } else {
+                pixels[index].b = clamp((b_num + 1) * 0xff / c_num);
+            }
+            error[2] = b - pixels[index].b / 225.0f;
+
+            // error diffusion
+            diffuse_error(errors, error, x, y, w, h, diffusion_type);
+        }
+    }
+
+    free(errors);
+    free(texture);
+    return 0;
+}
+
 int texture_debug(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
@@ -453,6 +540,7 @@ int texture_debug(lua_State *L) {
 // Make function list
 static luaL_Reg functions[] = {
     { "uniform_palette_dither", noisy_error_diffusion_dither },
+    { "uniform_palette_custom_dither", custom_texture_diffusion_dither },
     { "texture_debug", texture_debug },
     { nullptr, nullptr }
 };
