@@ -425,16 +425,19 @@ int custom_texture_diffusion_dither(lua_State *L) {
         return 1;
     }
 
-    int t_x = static_cast<int>(lua_tointeger(L, 8));
-    int t_y = static_cast<int>(lua_tointeger(L, 9));
+    float t_x = static_cast<float>(lua_tonumber(L, 8));
+    float t_y = static_cast<float>(lua_tonumber(L, 9));
     float t_scale = static_cast<float>(lua_tonumber(L, 10));
-    int center_x = static_cast<int>(lua_tointeger(L, 11)) + w / 2;
-    int center_y = static_cast<int>(lua_tointeger(L, 12)) + h / 2;
+    float center_x = static_cast<float>(lua_tonumber(L, 11));
+    float center_y = static_cast<float>(lua_tonumber(L, 12));
+    int t_loop = static_cast<int>(lua_tointeger(L, 13));
 
     if (t_scale == 0.0f) {
         perror("Invalid scale");
         return 1;
     }
+
+    int center_disp = static_cast<int>(lua_tointeger(L, 14));
 
     float* errors;
     errors = (float*)malloc(sizeof(float) * 3 * w * h);
@@ -445,17 +448,47 @@ int custom_texture_diffusion_dither(lua_State *L) {
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int index = x + w * y;
-            float scaled_x = (x - center_x) / t_scale + center_x;
-            float scaled_y = (y - center_y) / t_scale + center_y;
-            int t_index = static_cast<int>(scaled_x - t_x) % t_w + t_w * (static_cast<int>(scaled_y - t_y) % t_h);
+            float scaled_x = (x - t_x - w/2.0f) / t_scale - center_x + t_w/2.0f;
+            float scaled_y = (y - t_y - h/2.0f) / t_scale - center_y + t_h/2.0f;
+            int t_index = 0;
+            bool use_texture = false;
+            if (t_loop == 1) {
+                use_texture = true;
+            } else if (0 <= scaled_x && scaled_x < t_w && 0 <= scaled_y && scaled_y < t_h) {
+                use_texture = true;
+            }
             
+            if (use_texture) {
+                int tmp_y = (static_cast<int>(scaled_y) % t_h + t_h) % t_h;
+                t_index = static_cast<int>(scaled_x) % t_w + tmp_y * t_w;
+            }
+
             float error[3] = { 0.0f, 0.0f, 0.0f };
             float r = pixels[index].r / 225.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 225.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 225.0f + errors[2 + 3 * index];
 
-            // channel r
             int r_num = std::floor(r * c_num);
+            int g_num = std::floor(g * c_num);
+            int b_num = std::floor(b * c_num);
+
+            // テクスチャ範囲外の場合は四捨五入ののち誤差伝播
+            if (!use_texture) {
+                pixels[index].r = r * c_num - r_num < 0.5f ? clamp(r_num * 0xff / c_num) : clamp((r_num + 1) * 0xff / c_num);
+                error[0] = r - pixels[index].r / 225.0f;
+
+                pixels[index].g = g * c_num - g_num < 0.5f ? clamp(g_num * 0xff / c_num) : clamp((g_num + 1) * 0xff / c_num);
+                error[1] = g - pixels[index].g / 225.0f;
+
+                pixels[index].b = b * c_num - b_num < 0.5f ? clamp(b_num * 0xff / c_num) : clamp((b_num + 1) * 0xff / c_num);
+                error[2] = b - pixels[index].b / 225.0f;
+
+                diffuse_error(errors, error, x, y, w, h, diffusion_type);
+                continue;
+            }
+
+            // テクスチャ範囲内の場合はテクスチャを使ってディザリング
+            // channel r
             if (r * c_num - r_num < noise_amp * texture[t_index].r / 255.0f) {
                 pixels[index].r = clamp(r_num * 0xff / c_num);
             } else {
@@ -464,7 +497,6 @@ int custom_texture_diffusion_dither(lua_State *L) {
             error[0] = r - pixels[index].r / 225.0f;
 
             // channel g
-            int g_num = std::floor(g * c_num);
             if (g * c_num - g_num < noise_amp * texture[t_index].g / 255.0f) {
                 pixels[index].g = clamp(g_num * 0xff / c_num);
             } else {
@@ -473,7 +505,6 @@ int custom_texture_diffusion_dither(lua_State *L) {
             error[1] = g - pixels[index].g / 225.0f;
 
             // channel b
-            int b_num = std::floor(b * c_num);
             if (b * c_num - b_num < noise_amp * texture[t_index].b / 255.0f) {
                 pixels[index].b = clamp(b_num * 0xff / c_num);
             } else {
@@ -483,6 +514,28 @@ int custom_texture_diffusion_dither(lua_State *L) {
 
             // error diffusion
             diffuse_error(errors, error, x, y, w, h, diffusion_type);
+        }
+    }
+
+    if (center_disp == 1) {
+        const int radius = 2;
+        for (int y = -radius; y <= radius; y++){
+            for (int x = -radius; x <= radius; x++){
+                // 円の外はスキップ
+                if (x*x + y*y > radius*radius){
+                    continue;
+                }
+
+                float moved_x = x + w/2 + t_x;
+                float moved_y = y + h/2 + t_y;
+                if (moved_x < 0 || w < moved_x || moved_y < 0 || h < moved_y){
+                    continue;
+                }
+                int index = static_cast<int>(moved_x) + w * static_cast<int>(moved_y);
+                pixels[index].r = 0;
+                pixels[index].g = 0xff;
+                pixels[index].b = 0xff;
+            }
         }
     }
 
