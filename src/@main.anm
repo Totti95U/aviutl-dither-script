@@ -36,7 +36,12 @@ end
 
 local seed = (check0 * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
 local t_size = tostring(t_size)
-local txr_num = 0;
+local txr_num = 1
+if noise_type_str == "bluenoise" then
+    txr_num = 64
+end
+--[[
+-- Auto count the number of texture files (super slow)
 if noise_type >= 3 then
     local txrs = rikky_module.dir(fold .. "\\" .. noise_type_str .. "\\", "txr")
     for _, p in ipairs(txrs) do
@@ -46,6 +51,7 @@ if noise_type >= 3 then
         end
     end
 end
+]]--
 
 local t_id
 if check0 == 0 then
