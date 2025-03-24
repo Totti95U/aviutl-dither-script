@@ -25,11 +25,11 @@ Pixel_RGB* read_txr(const char* path, int* w, int* h) {
     }
 
     // read texture size
-    unsigned char logW, logH;
-    fread(&logW, sizeof(unsigned char), 1, file);
-    fread(&logH, sizeof(unsigned char), 1, file);
-    *w = 1 << logW;
-    *h = 1 << logH;
+    unsigned short int tmp_w, tmp_h;
+    fread(&tmp_w, sizeof(unsigned short int), 1, file);
+    fread(&tmp_h, sizeof(unsigned short int), 1, file);
+    *w = tmp_w;
+    *h = tmp_h;
     // read texture data
     Pixel_RGB *texture = (Pixel_RGB*)malloc(sizeof(Pixel_RGB) * *w * *h);
     if (!texture) {
@@ -330,7 +330,7 @@ int noisy_error_diffusion_dither(lua_State *L) {
         texture = read_txr(texture_path, &t_w, &t_h);
         if (!texture) {
             perror("Failed to open texture file");
-            return 1;
+            return 0;
         }
     }
 
@@ -422,7 +422,7 @@ int custom_texture_diffusion_dither(lua_State *L) {
     texture = read_txr(texture_path, &t_w, &t_h);
     if (!texture || t_w * t_h == 0) {
         perror("Failed to open texture file");
-        return 1;
+        return 0;
     }
 
     float t_x = static_cast<float>(lua_tonumber(L, 8));
@@ -434,7 +434,7 @@ int custom_texture_diffusion_dither(lua_State *L) {
 
     if (t_scale == 0.0f) {
         perror("Invalid scale");
-        return 1;
+        return 0;
     }
 
     int center_disp = static_cast<int>(lua_tointeger(L, 14));
@@ -541,7 +541,7 @@ int custom_texture_diffusion_dither(lua_State *L) {
 
     free(errors);
     free(texture);
-    return 0;
+    return 1;
 }
 
 int texture_debug(lua_State *L) {
