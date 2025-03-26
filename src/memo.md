@@ -21,3 +21,6 @@
 7. Sierra
 8. Stucki
 9. Jarvis, Judice, and Ninke
+
+減色方法については以下の論文を元に Adaptive Distributing Units (ADU) を使用した
+- Pérez-Delgado, ML., Celebi, M.E. A comparative study of color quantization methods using various image quality assessment indices. Multimedia Systems 30, 40 (2024). https://doi.org/10.1007/s00530-023-01206-7
