@@ -1,18 +1,20 @@
 {
     "name": "dither-utl",
+    "prodctName": "Dither Utility",
     "version": "1.0.0",
     "description": "An Electron app to convert images to .txr files with extensible color palette optimization.",
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "compile": "tsc -p tsconfig.main.json && cross-env NODE_ENV=\"development\" NO_WATCH=\"true\" webpack"
+        "build": "electron-packager . --icon=app.ico --overwrite"
     },
     "dependencies": {
-        "@datastructures-js/priority-queue": "^6.3.2",
         "electron": "^25.9.8",
         "jimp": "^0.16.1",
-        "kd-tree-javascript": "^1.0.3",
         "material-symbols": "^0.29.2",
         "sharp": "^0.33.5"
+    },
+    "devDependencies": {
+        "@electron/packager": "^18.3.6"
     }
 }
