@@ -77,6 +77,9 @@ h1 {
 #drop-text b {
     font-size: 20px;
 }
+#drop-text .material-symbols-outlined {
+    transform: translateY(6px);
+}
 
 #image-preview {
     width: 100%;
