@@ -45,7 +45,6 @@ h1 {
     align-items: center;
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s;
-    z-index: 10;
 }
 
 #drop-area:hover {
@@ -64,7 +63,6 @@ h1 {
     margin: 0;
     color: #333;
     font-size: 240px !important;
-    z-index: 0;
     opacity: 0.1;
 }
 
@@ -73,7 +71,6 @@ h1 {
     margin: 0;
     font-size: 16px;
     color: #333;
-    z-index: 10;
 }
 #drop-text b {
     font-size: 20px;
@@ -87,6 +84,7 @@ h1 {
     max-height: 300px;
     object-fit: contain;
     display: none;
+    z-index: 1;
 }
 
 #filePath {
