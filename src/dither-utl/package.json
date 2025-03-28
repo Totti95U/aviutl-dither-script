@@ -9,7 +9,7 @@
         "build": "electron-packager . --icon=app.ico --overwrite"
     },
     "dependencies": {
-        "electron": "^25.9.8",
+        "electron": "^35.1.2",
         "jimp": "^0.16.1",
         "material-symbols": "^0.29.2",
         "sharp": "^0.33.5"
