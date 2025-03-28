@@ -9,8 +9,13 @@ const copyPaletteBtn = document.getElementById("copyPaletteBtn");
 const copyNotification = document.getElementById("copyNotification");
 const paletteProgress = document.getElementById("paletteProgress");
 
+const preventDefault = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+};
+
 dropArea.addEventListener("dragover", (event) => {
-    event.preventDefault();
+    preventDefault(event);
     dropArea.classList.add("dragover");
 });
 
@@ -19,12 +24,12 @@ dropArea.addEventListener("dragleave", () => {
 });
 
 dropArea.addEventListener("drop", async (event) => {
-    event.preventDefault();
+    preventDefault(event);
     dropArea.classList.remove("dragover");
 
-    const file = event.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-        loadImage(file.path);
+    const file = window.electronAPI.showFilePath(event.dataTransfer.files[0]);
+    if (file.path && file.type.startsWith("image/")) {
+        loadImage(file);
     } else {
         alert("Please drop a valid image file.");
     }
@@ -37,7 +42,8 @@ dropArea.addEventListener("click", async () => {
     }
 });
 
-function loadImage(filePath) {
+function loadImage(file) {
+    const filePath = file.path;
     filePathText.innerText = `Selected: ${filePath}`;
     imagePreview.src = `file://${filePath}`;
     imagePreview.style.display = "block";
