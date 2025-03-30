@@ -112,4 +112,118 @@ obj.putpixeldata(data)
 
 obj.effect("ローテーション", "90度回転", -prop_dir)
 obj.effect("リサイズ", "拡大率", 100 * dot_size, "補間なし", 1)
+
 ---------------------------------------------------
+@PaletteDither
+require("rikky_module")
+--track0:ノイズ強度,0,100,100,0.01
+--track1:色候補数,1,256,2,1
+--track2:ノイズ,0,6,1,1
+--track3:伝搬,0,9,1,1
+--dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; 使う色, palette={0x000000, 0xffffff}; ドットサイズ, dot_size=1; 伝搬方向, prop_dir=0; 時間変化/chk, check0=0;
+---------------------------------------------------
+
+rikky_module.fold(1)
+
+require("DITHERINGS")
+
+local bool_to_number={ [true]=1, [false]=0 }
+
+obj.effect("ローテーション", "90度回転", prop_dir)
+obj.effect("リサイズ", "拡大率", 100/dot_size, "補間なし", 1)
+local data, w, h = obj.getpixeldata()
+
+local candidate_size = obj.track1
+local noise_amp = obj.track0 / 100.0
+local noise_type = obj.track2
+local noise_type_str
+local diffusion_type = obj.track3
+local palette_num = #palette
+
+if noise_type == 3 or noise_type == 4 then
+    noise_type_str = "bluenoise"
+elseif noise_type == 5 or noise_type == 6 then
+    noise_type_str = "bayer"
+end
+
+local seed = (check0 * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
+local t_size = tostring(t_size)
+local txr_num = 1
+if noise_type_str == "bluenoise" then
+    txr_num = 64
+end
+--[[
+-- Auto count the number of texture files (super slow)
+if noise_type >= 3 then
+    local txrs = rikky_module.dir(fold .. "\\" .. noise_type_str .. "\\", "txr")
+    for _, p in ipairs(txrs) do
+        -- find full path including "`t_size`x`t_size` - \d+\.txr"
+        if string.find(p, t_size .. "x" .. t_size) ~= nil then
+            txr_num = txr_num + 1
+        end
+    end
+end
+]]--
+
+local t_id
+if check0 == 0 then
+    t_id = obj.rand(1, txr_num, seed, 1)
+else
+    t_id = obj.rand(1, txr_num, seed)
+end
+
+local t_path = ""
+if noise_type >= 3 then
+    t_path = fold .. "\\" .. noise_type_str .. "\\" .. t_size .. "x" .. t_size .. "-" .. t_id ..".txr"
+end
+
+if noise_type >= 3 and txr_num == 0 then
+    debug_print("Can't open texture file.")
+else
+    DITHERINGS.palette_dither(data, w, h, noise_amp, palette, palette_num, candidate_size, seed, noise_type, diffusion_type, t_path)
+    -- local tmp = DITHERINGS.palette_dither(data, w, h, noise_amp, palette, palette_num, seed, noise_type, diffusion_type, t_path)
+    -- debug_print("tmp: " .. tostring(tmp))
+end
+
+obj.putpixeldata(data)
+
+obj.effect("ローテーション", "90度回転", -prop_dir)
+obj.effect("リサイズ", "拡大率", 100 * dot_size, "補間なし", 1)
+---------------------------------------------------
+@CustomTexturePaletteDither
+require("rikky_module")
+--track0:ノイズ強度,0,100,100,0.01
+--track1:X座標,-2000,2000,0,1
+--track2:Y座標,-2000,2000,0,1
+--track3:拡大率,0.01,800.0,100.0,0.01
+--dialog:テクスチャ, txr=""; ドットサイズ, dot_size=1; 伝搬方法, diffusion_type=0; 伝搬方向, prop_dir=0; パレット, palette={0x000000, 0xffffff}; 色候補数, candidate_size=2; 色を混ぜる/chk, mix_color=0; 中心座標X, center_x=0; 中心座標Y, center_y=0; ループさせる/chk, txr_loop=1; 中心を表示/chk, center_disp=0; 時間変化/chk, check0=0;
+---------------------------------------------------
+rikky_module.file(1)
+rikky_module.list(3, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+
+require("DITHERINGS")
+
+local noise_amp = obj.track0 / 100.0
+local offset_x = obj.track1 / dot_size
+local offset_y = obj.track2 / dot_size
+local scale = obj.track3 / 100.0
+candidate_size = math.max(2, candidate_size)
+local palette_num = #palette
+
+local seed = (check0 * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) + (obj.layer * 648 + 81327)) % 128375898
+
+local t_path = txr
+dot_size = math.max(0.01, dot_size)
+obj.effect("リサイズ", "拡大率", 100 / dot_size, "補間なし", 1)
+obj.effect("ローテーション", "90度回転", prop_dir)
+local data, w, h = obj.getpixeldata()
+
+local center_x = center_x / dot_size
+local center_y = center_y / dot_size
+
+DITHERINGS.custom_palette_dither(data, w, h, noise_amp, palette, palette_num, candidate_size, mix_color, diffusion_type, t_path, offset_x, offset_y, scale, center_x, center_y, txr_loop, center_disp, seed)
+
+obj.putpixeldata(data)
+
+obj.effect("ローテーション", "90度回転", -prop_dir)
+obj.effect("リサイズ", "拡大率", 100 * dot_size, "補間なし", 1)
