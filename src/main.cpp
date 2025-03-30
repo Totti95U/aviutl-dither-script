@@ -479,8 +479,6 @@ int noisy_error_diffusion_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
-    LinearRGB *linear_pixels = (LinearRGB*)malloc(sizeof(LinearRGB) * w * h);
-    // Oklab *oklab_pixels = RGBA_to_Oklab(pixels, w * h);
 
     float noise_amp = static_cast<float>(lua_tonumber(L, 4));
     int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
@@ -527,97 +525,44 @@ int noisy_error_diffusion_dither(lua_State *L) {
             float r = pixels[index].r / 255.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 255.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 255.0f + errors[2 + 3 * index];
-            // float r = toLinear[pixels[index].r] + errors[0 + 3 * index];
-            // float g = toLinear[pixels[index].g] + errors[1 + 3 * index];
-            // float b = toLinear[pixels[index].b] + errors[2 + 3 * index];
-            // float l = oklab_pixels[index].l + errors[0 + 3 * index];
-            // float a = oklab_pixels[index].a + errors[1 + 3 * index];
-            // float b = oklab_pixels[index].b + errors[2 + 3 * index];
+            float r_int = std::floor(r * c_num);
+            float g_int = std::floor(g * c_num);
+            float b_int = std::floor(b * c_num);
 
             float noise[3] = { 0.0f, 0.0f, 0.0f };
             noises(mt, noise, noise_type, texture, t_index);
 
             // channel r
-            float r_int = std::floor(r * c_num);
             if (fmodf(r * c_num, 1.0f) < noise_amp * noise[0] + 0.5f) {
-                linear_pixels[index].r = r_int / c_num;
+                pixels[index].r = clamp(0xff * r_int / c_num);
             } else {
-                linear_pixels[index].r = (r_int + 1.0f) / c_num;
+                pixels[index].r = clamp(0xff * (r_int + 1.0f) / c_num);
             }
-            error[0] = r - linear_pixels[index].r;
+            error[0] = r - pixels[index].r / 255.0f;
 
             // channel g
-            float g_int = std::floor(g * c_num);
             if (fmodf(g * c_num, 1.0f) < noise_amp * noise[1] + 0.5f) {
-                linear_pixels[index].g = g_int / c_num;
+                pixels[index].g = clamp(0xff * g_int / c_num);
             } else {
-                linear_pixels[index].g = (g_int + 1.0f) / c_num;
+                pixels[index].g = clamp(0xff * (g_int + 1.0f) / c_num);
             }
-            // oklab_pixels[index].a -= 0.5f;
-            error[1] = g - linear_pixels[index].g;
+            error[1] = g - pixels[index].g / 255.0f;
 
             // channel b (rgb)
-            float b_int = std::floor(b * c_num);
             if (fmodf(b * c_num, 1.0f) < noise_amp * noise[2] + 0.5f) {
-                linear_pixels[index].b = b_int / c_num;
+                pixels[index].b = 0xff * b_int / c_num;
             } else {
-                linear_pixels[index].b = (b_int + 1.0f) / c_num;
+                pixels[index].b = 0xff * (b_int + 1.0f) / c_num;
             }
-            error[2] = b - linear_pixels[index].b;
-
-            /* ================ Oklab version ================= */
-
-            // // channel l
-            // // float l_ = l + 0.5f; // l is in [0, 1)
-            // float l_int = std::floor(l * c_num);
-            // if (fmodf(l * c_num, 1.0f) < noise_amp * noise[0] + 0.5f) {
-            //     oklab_pixels[index].l = l_int / c_num;
-            // } else {
-            //     oklab_pixels[index].l = (l_int + 1.0f) / c_num;
-            // }
-            // // oklab_pixels[index].l -= 0.5f;
-            // error[0] = l - oklab_pixels[index].l;
-
-            // // channel a
-            // float a_ = a + 0.5f; // a is in [-0.5, 0.5)
-            // float a_int = std::floor(a * c_num);
-            // if (fmodf(a * c_num, 1.0f) < noise_amp * noise[1] + 0.5f) {
-            //     oklab_pixels[index].a = a_int / c_num;
-            // } else {
-            //     oklab_pixels[index].a = (a_int + 1.0f) / c_num;
-            // }
-            // oklab_pixels[index].a -= 0.5f;
-            // error[1] = a - oklab_pixels[index].a;
-
-            // // channel b (lab)
-            // float b_ = b + 0.5f; // b is in [-0.5, 0.5)
-            // float b_int = std::floor(b * c_num);
-            // if (fmodf(b * c_num, 1.0f) < noise_amp * noise[2] + 0.5f) {
-            //     oklab_pixels[index].b = b_int / c_num;
-            // } else {
-            //     oklab_pixels[index].b = (b_int + 1.0f) / c_num;
-            // }
-            // oklab_pixels[index].b -= 0.5f;
-            // error[2] = b - oklab_pixels[index].b;
+            error[2] = b - pixels[index].b / 255.0f;
 
             // error diffusion
             diffuse_error(errors, error, x, y, w, h, diffusion_type);
         }
     }
 
-    for (int i = 0; i < w * h; i++) {
-        LinearRGB tmp = linear_pixels[i];
-        pixels[i].r = toStandard(tmp.r);
-        pixels[i].g = toStandard(tmp.g);
-        pixels[i].b = toStandard(tmp.b);
-        // pixels[i] = Oklab2RGBA(oklab_pixels[i], pixels[i].a);
-    }
-
     free(errors);
     free(texture);
-    free(linear_pixels);
-    // free(oklab_texture);
-    // free(oklab_pixels);
     return 0;
 }
 
@@ -626,8 +571,6 @@ int custom_texture_diffusion_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
-    LinearRGB *linear_pixels = (LinearRGB*)malloc(sizeof(LinearRGB) * w * h);
-    // Oklab *oklab_pixels = rgba_to_oklab(pixels, w * h);
 
     float noise_amp = static_cast<float>(lua_tonumber(L, 4));
     int c_num = static_cast<int>(lua_tointeger(L, 5)) - 1;
@@ -675,48 +618,27 @@ int custom_texture_diffusion_dither(lua_State *L) {
             
             if (use_texture) {
                 int tmp_y = (static_cast<int>(scaled_y) % t_h + t_h) % t_h;
-                t_index = static_cast<int>(scaled_x) % t_w + tmp_y * t_w;
+                t_index = (static_cast<int>(scaled_x) % t_w + t_w) % t_w + tmp_y * t_w;
             }
 
             float error[3] = { 0.0f, 0.0f, 0.0f };
             float r = pixels[index].r / 255.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 255.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 255.0f + errors[2 + 3 * index];
-            // float r = toLinear[pixels[index].r] + errors[0 + 3 * index];
-            // float g = toLinear[pixels[index].g] + errors[1 + 3 * index];
-            // float b = toLinear[pixels[index].b] + errors[2 + 3 * index];
-            // float l = oklab_pixels[index].l + errors[0 + 3 * index];
-            // float a = oklab_pixels[index].a + errors[1 + 3 * index];
-            // float b = oklab_pixels[index].b + errors[2 + 3 * index];
-
             float r_int = std::floor(r * c_num);
             float g_int = std::floor(g * c_num);
             float b_int = std::floor(b * c_num);
-            // int l_int = std::floor(l * c_num);
-            // int a_int = std::floor((a + 0.5f) * c_num);
-            // int b_int = std::floor((b + 0.5f) * c_num);
 
             // テクスチャ範囲外の場合は四捨五入ののち誤差伝播
             if (!use_texture) {
-                linear_pixels[index].r = fmodf(r * c_num, 1.0f) < 0.5f ? r_int / c_num : (r_int + 1) / c_num;
-                error[0] = r - linear_pixels[index].r;
+                pixels[index].r = fmodf(r * c_num, 1.0f) < 0.5f ? clamp(0xff * r_int / c_num) : clamp(0xff * (r_int + 1) / c_num);
+                error[0] = r - pixels[index].r / 255.0f;
 
-                linear_pixels[index].g = fmodf(g * c_num, 1.0f) < 0.5f ? g_int / c_num : (g_int + 1) / c_num;
-                error[1] = g - linear_pixels[index].g;
+                pixels[index].g = fmodf(g * c_num, 1.0f) < 0.5f ? clamp(0xff * g_int / c_num) : clamp(0xff * (g_int + 1) / c_num);
+                error[1] = g - pixels[index].g / 255.0f;
 
-                linear_pixels[index].b = fmodf(b * c_num, 1.0f) < 0.5f ? b_int / c_num : (b_int + 1) / c_num;
-                error[2] = b - linear_pixels[index].b;
-
-                // oklab_pixels[index].l = l * c_num - l_num < 0.5f ? l_num / c_num : (l_num + 1) / c_num;
-                // error[0] = l - oklab_pixels[index].l;
-
-                // oklab_pixels[index].a = (a + 0.5f) * c_num - a_num < 0.5f ? a_num / c_num : (a_num + 1) / c_num;
-                // oklab_pixels[index].a -= 0.5f;
-                // error[1] = a - oklab_pixels[index].a;
-
-                // oklab_pixels[index].b = (b + 0.5f) * c_num - b_num < 0.5f ? b_num / c_num : (b_num + 1) / c_num;
-                // oklab_pixels[index].b -= 0.5f;
-                // error[2] = b - oklab_pixels[index].b;
+                pixels[index].b = fmodf(b * c_num, 1.0f) < 0.5f ? clamp(0xff * b_int / c_num) : 0xff * (b_int + 1) / c_num;
+                error[2] = b - pixels[index].b / 255.0f;
 
                 diffuse_error(errors, error, x, y, w, h, diffusion_type);
                 continue;
@@ -725,64 +647,31 @@ int custom_texture_diffusion_dither(lua_State *L) {
             // テクスチャ範囲内の場合はテクスチャを使ってディザリング
             // channel r
             if (fmodf(r * c_num, 1.0f) < noise_amp * texture[t_index].r / 255.0f) {
-                linear_pixels[index].r = r_int / c_num;
+                pixels[index].r = clamp(0xff * r_int / c_num);
             } else {
-                linear_pixels[index].r = (r_int + 1) / c_num;
+                pixels[index].r = clamp(0xff * (r_int + 1) / c_num);
             }
-            error[0] = r - linear_pixels[index].r;
+            error[0] = r - pixels[index].r / 255.0f;
 
             // channel g
             if (fmodf(g * c_num, 1.0f) < noise_amp * texture[t_index].g / 255.0f) {
-                linear_pixels[index].g = g_int / c_num;
+                pixels[index].g = clamp(0xff * g_int / c_num);
             } else {
-                linear_pixels[index].g = (g_int + 1) / c_num;
+                pixels[index].g = clamp(0xff * (g_int + 1) / c_num);
             }
-            error[1] = g - linear_pixels[index].g;
+            error[1] = g - pixels[index].g / 255.0f;
 
             // channel b
             if (fmodf(b * c_num, 1.0f) < noise_amp * texture[t_index].b / 255.0f) {
-                linear_pixels[index].b = b_int / c_num;
+                pixels[index].b = clamp(0xff * b_int / c_num);
             } else {
-                linear_pixels[index].b = (b_int + 1) / c_num;
+                pixels[index].b = clamp(0xff * (b_int + 1) / c_num);
             }
-            error[2] = b - linear_pixels[index].b;
-
-            // // channel l
-            // if (l * c_num - l_int < noise_amp * oklab_texture[t_index].l) {
-            //     oklab_pixels[index].l = l_int / c_num;
-            // } else {
-            //     oklab_pixels[index].l = (l_int + 1) / c_num;
-            // }
-            // error[0] = l - oklab_pixels[index].l;
-
-            // // channel a
-            // if ((a + 0.5f) * c_num - a_int < noise_amp * oklab_texture[t_index].a + 0.5f) {
-            //     oklab_pixels[index].a = a_int / c_num;
-            // } else {
-            //     oklab_pixels[index].a = (a_int + 1) / c_num;
-            // }
-            // oklab_pixels[index].a -= 0.5f;
-            // error[1] = a - oklab_pixels[index].a;
-
-            // // channel b
-            // if ((b + 0.5f) * c_num - b_int < noise_amp * oklab_texture[t_index].b + 0.5f) {
-            //     oklab_pixels[index].b = b_int / c_num;
-            // } else {
-            //     oklab_pixels[index].b = (b_int + 1) / c_num;
-            // }
-            // oklab_pixels[index].b -= 0.5f;
-            // error[2] = b - oklab_pixels[index].b;
+            error[2] = b - pixels[index].b / 255.0f;
 
             // error diffusion
             diffuse_error(errors, error, x, y, w, h, diffusion_type);
         }
-    }
-
-    for (int i = 0; i < w * h; i++) {
-        Pixel_RGB tmp = linearRGB2rgb(linear_pixels[i]);
-        pixels[i].r = tmp.r;
-        pixels[i].g = tmp.g;
-        pixels[i].b = tmp.b;
     }
 
     if (center_disp == 1) {
@@ -809,8 +698,6 @@ int custom_texture_diffusion_dither(lua_State *L) {
 
     free(errors);
     free(texture);
-    free(linear_pixels);
-    // free(oklab_pixels);
     return 1;
 }
 
@@ -819,6 +706,11 @@ int custom_texture_diffusion_dither(lua_State *L) {
 float rgb_luma(Pixel_RGB color) {
     // CCIR 601 luminosity
     return (0.299f * color.r + 0.587f * color.g + 0.114f * color.b) / 255.0f;
+}
+
+float rgb_luma(LinearRGB color) {
+    // CCIR 601 luminosity
+    return 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
 }
 
 // Pixel_RGB findClosestColor(const Pixel_RGB* palette, int palette_size, const Pixel_RGB& color){
@@ -851,8 +743,30 @@ Oklab findClosestColor(const Oklab* palette, int palette_size, const Oklab& colo
     return closest_color;
 }
 
+LinearRGB findClosestColor(const LinearRGB *palette, int palette_size, const LinearRGB &color){
+    LinearRGB closest_color = {0, 0, 0};
+    float min_dist = 1e4;
+
+    for (int i = 0; i < palette_size; ++i) {
+        // weighted luma rgb-distance
+        float luma1 = rgb_luma(palette[i]);
+        float luma2 = rgb_luma(color);
+        float luma_diff = luma1 - luma2;
+        float r_diff = (palette[i].r - color.r) / 255.0f;
+        float g_diff = (palette[i].g - color.g) / 255.0f;
+        float b_diff = (palette[i].b - color.b) / 255.0f;
+        float dist = (r_diff * r_diff * 0.299 + g_diff * g_diff * 0.587 + b_diff * b_diff * 0.114) * 0.75f + luma_diff * luma_diff;
+        if (dist < min_dist) {
+            min_dist = dist;
+            closest_color = palette[i];
+        }
+    }
+
+    return closest_color;
+}
+
 // arbitrary color palette version
-int noisy_error_diffusion_custom_palette_dither(lua_State *L) {
+int oklab_noisy_error_diffusion_custom_palette_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
@@ -986,8 +900,8 @@ int noisy_error_diffusion_custom_palette_dither(lua_State *L) {
     return 0;
 }
 
-// Custom texture dithering (uniformly distributed color palette version)
-int custom_texture_palette_dither(lua_State *L) {
+// Custom texture dithering (arbitrary color palette version)
+int oklab_custom_texture_palette_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
@@ -1244,8 +1158,8 @@ int texture_debug(lua_State *L) {
 static luaL_Reg functions[] = {
     { "uniform_palette_dither", noisy_error_diffusion_dither },
     { "uniform_palette_custom_dither", custom_texture_diffusion_dither },
-    { "palette_dither", noisy_error_diffusion_custom_palette_dither },
-    { "custom_palette_dither", custom_texture_palette_dither },
+    { "palette_dither", oklab_noisy_error_diffusion_custom_palette_dither },
+    { "custom_palette_dither", oklab_custom_texture_palette_dither },
     { "texture_debug", texture_debug },
     { nullptr, nullptr }
 };
