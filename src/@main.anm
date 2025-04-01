@@ -8,7 +8,7 @@ require("rikky_module")
 --track0:ノイズ強度,0,100,100,0.01
 --track1:色数,2,256,2,1
 --track2:ノイズ,0,6,1,1
---track3:伝搬,0,9,1,1
+--track3:伝搬方法,0,9,1,1
 --dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; ドットサイズ, dot_size=1; 伝搬方向, prop_dir=0; 時間変化/chk, check0=0;
 ---------------------------------------------------
 
@@ -84,7 +84,7 @@ require("rikky_module")
 --track1:X座標,-2000,2000,0,1
 --track2:Y座標,-2000,2000,0,1
 --track3:拡大率,0.01,800.0,100.0,0.01
---dialog:テクスチャ, txr=""; ドットサイズ, dot_size=1; 伝搬方法, diffusion_type=0; 伝搬方向, prop_dir=0; 色数, color_num=2; 中心座標X, center_x=0; 中心座標Y, center_y=0; ループさせる/chk, txr_loop=0; 中心を表示/chk, center_disp=0;
+--dialog:テクスチャ, txr=""; ドットサイズ, dot_size=1; 伝搬方法, diffusion_type=0; 伝搬方向, prop_dir=0; 色数, color_num=2; 中心X座標, center_x=0; 中心Y座標, center_y=0; ループさせる/chk, txr_loop=0; 中心を表示/chk, center_disp=0;
 ---------------------------------------------------
 rikky_module.file(1)
 rikky_module.list(3, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
@@ -132,7 +132,7 @@ require("rikky_module")
 --track0:ノイズ強度,0,100,100,0.01
 --track1:色候補数,1,256,8,1
 --track2:ノイズ,0,6,1,1
---track3:伝搬,0,9,1,1
+--track3:伝搬方法,0,9,1,1
 --dialog:テクスチャフォルダ, fold=""; テクスチャサイズ, t_size=64; 使う色, palette={0x000000, 0xffffff}; ドットサイズ, dot_size=1; 伝搬方向, prop_dir=0; 時間変化/chk, check0=0;
 ---------------------------------------------------
 
@@ -209,7 +209,7 @@ require("rikky_module")
 --track1:X座標,-2000,2000,0,1
 --track2:Y座標,-2000,2000,0,1
 --track3:拡大率,0.01,800.0,100.0,0.01
---dialog:テクスチャ, txr=""; ドットサイズ, dot_size=1; 伝搬方法, diffusion_type=0; 伝搬方向, prop_dir=0; パレット, palette={0x000000, 0xffffff}; 色候補数, candidate_size=8; 色を混ぜる/chk, mix_color=0; 中心座標X, center_x=0; 中心座標Y, center_y=0; ループさせる/chk, txr_loop=1; 中心を表示/chk, center_disp=0; 時間変化/chk, check0=0;
+--dialog:テクスチャ, txr=""; ドットサイズ, dot_size=1; 伝搬方法, diffusion_type=0; 伝搬方向, prop_dir=0; パレット, palette={0x000000, 0xffffff}; 色候補数, candidate_size=8; 色を混ぜる/chk, mix_color=0; 中心X座標, center_x=0; 中心Y座標, center_y=0; ループさせる/chk, txr_loop=1; 中心を表示/chk, center_disp=0; 時間変化/chk, check0=0;
 ---------------------------------------------------
 rikky_module.file(1)
 rikky_module.list(3, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
