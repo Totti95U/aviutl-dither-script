@@ -78,7 +78,7 @@ obj.putpixeldata(data)
 obj.effect("ローテーション", "90度回転", -prop_dir)
 obj.effect("リサイズ", "拡大率", 100 * dot_size, "補間なし", 1)
 ---------------------------------------------------
-@CustomNoiseDither
+@CustomTextureDither
 require("rikky_module")
 --track0:ノイズ強度,0,100,100,0.01
 --track1:X座標,-2000,2000,0,1
@@ -102,6 +102,19 @@ dot_size = math.max(0.01, dot_size)
 obj.effect("リサイズ", "拡大率", 100 / dot_size, "補間なし", 1)
 obj.effect("ローテーション", "90度回転", prop_dir)
 local data, w, h = obj.getpixeldata()
+
+local function rotate_coordinate()
+    local tmp = offset_x
+    offset_x = -offset_y
+    offset_y = tmp
+    tmp = center_x
+    center_x = -center_y
+    center_y = tmp
+end
+
+for i = 1, prop_dir do
+    rotate_coordinate()
+end
 
 local center_x = center_x / dot_size
 local center_y = center_y / dot_size
@@ -217,6 +230,19 @@ dot_size = math.max(0.01, dot_size)
 obj.effect("リサイズ", "拡大率", 100 / dot_size, "補間なし", 1)
 obj.effect("ローテーション", "90度回転", prop_dir)
 local data, w, h = obj.getpixeldata()
+
+local function rotate_coordinate()
+    local tmp = offset_x
+    offset_x = -offset_y
+    offset_y = tmp
+    tmp = center_x
+    center_x = -center_y
+    center_y = tmp
+end
+
+for i = 1, prop_dir do
+    rotate_coordinate()
+end
 
 local center_x = center_x / dot_size
 local center_y = center_y / dot_size
