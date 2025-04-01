@@ -6,4 +6,4 @@
 *.dll
 assets/*
 src/dither-utl/node_modules
-src/dither-utl/dither-utl-win32-x64
+src/dither-utl/dithering-utility-win32-x64
