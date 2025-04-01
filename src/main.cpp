@@ -116,9 +116,9 @@ Pixel_RGB linearRGB2rgb(LinearRGB pixel) {
     // result.r = toStandard(pixel.r);
     // result.g = toStandard(pixel.g);
     // result.b = toStandard(pixel.b);
-    result.r = pixel.r * 0xff;
-    result.g = pixel.g * 0xff;
-    result.b = pixel.b * 0xff;
+    result.r = clamp(pixel.r * 0xff);
+    result.g = clamp(pixel.g * 0xff);
+    result.b = clamp(pixel.b * 0xff);
     return result;
 }
 
@@ -721,14 +721,6 @@ Oklab findClosestColor(const Oklab* palette, int palette_size, const Oklab& colo
 
     // TODO: use kd-tree
     for (int i = 0; i < palette_size; ++i) {
-        // weighted luma rgb-distance
-        // float luma1 = rgb_luma(palette[i]);
-        // float luma2 = rgb_luma(color);
-        // float luma_diff = luma1 - luma2;
-        // float r_diff = (palette[i].r - color.r) / 255.0f;
-        // float g_diff = (palette[i].g - color.g) / 255.0f;
-        // float b_diff = (palette[i].b - color.b) / 255.0f;
-        // float dist = (r_diff * r_diff * 0.299 + g_diff * g_diff * 0.587 + b_diff * b_diff * 0.114) * 0.75f + luma_diff * luma_diff;
         // CIE76 color distance
         float dist = 
             (palette[i].l - color.l) * (palette[i].l - color.l) +
@@ -747,7 +739,7 @@ LinearRGB findClosestColor(const LinearRGB *palette, int palette_size, const Lin
     LinearRGB closest_color = {0, 0, 0};
     float min_dist = 1e4;
 
-    for (int i = 0; i < palette_size; ++i) {
+    for (int i = 0; i < palette_size; i++) {
         // weighted luma rgb-distance
         float luma1 = rgb_luma(palette[i]);
         float luma2 = rgb_luma(color);
@@ -766,36 +758,23 @@ LinearRGB findClosestColor(const LinearRGB *palette, int palette_size, const Lin
 }
 
 // arbitrary color palette version
-int oklab_noisy_error_diffusion_custom_palette_dither(lua_State *L) {
+int rgb_noisy_error_diffusion_custom_palette_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
-    // LinearRGB *linear_pixels = (LinearRGB*)malloc(sizeof(LinearRGB) * w * h);
-    // Oklab *oklab_pixels = rgba_to_oklab(pixels, w * h);
 
     float noise_amp = static_cast<float>(lua_tonumber(L, 4));
     
     // array containing palette data is at index 5
     int palette_size = static_cast<int>(lua_tointeger(L, 6));
-    Oklab *palette = (Oklab*)malloc(sizeof(Oklab) * palette_size);
+    LinearRGB *palette = (LinearRGB*)malloc(sizeof(LinearRGB) * palette_size);
     for (int i = 0; i < palette_size; i++) {
         lua_rawgeti(L, 5, i + 1);
         int val = static_cast<int>(lua_tointeger(L, -1));
         lua_pop(L, 1);
-        Pixel_RGB tmp;
-        tmp.r = (val >> 16) & 0xff;
-        tmp.g = (val >> 8) & 0xff;
-        tmp.b = val & 0xff;
-        palette[i] = rgb2oklab(tmp);
-        // debug: display palette
-        // for (int x = 0; x < 16; x++) {
-        //     for (int y = 0; y < 16; y++) {
-        //         int index = x + i * 16 + w * y;
-        //         pixels[index].r = tmp.r;
-        //         pixels[index].g = tmp.g;
-        //         pixels[index].b = tmp.b;
-        //     }
-        // }
+        palette[i].r = ((val >> 16) & 0xff) / 255.0f;
+        palette[i].g = ((val >> 8) & 0xff) / 255.0f;
+        palette[i].b = (val & 0xff) / 255.0f;
     }
     int candSize = static_cast<int>(lua_tointeger(L, 7));
 
@@ -841,33 +820,26 @@ int oklab_noisy_error_diffusion_custom_palette_dither(lua_State *L) {
             float r = pixels[index].r / 255.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 255.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 255.0f + errors[2 + 3 * index];
-            r = min(max(r, 0.0f), 1.0f);
-            g = min(max(g, 0.0f), 1.0f);
-            b = min(max(b, 0.0f), 1.0f);
-            // float r = toLinear[pixels[index].r] + errors[0 + 3 * index];
-            // float g = toLinear[pixels[index].g] + errors[1 + 3 * index];
-            // float b = toLinear[pixels[index].b] + errors[2 + 3 * index];
-            Oklab oklab_pixel = linearRGB2oklab({r, g, b});
 
             float noise[3] = { 0.0f, 0.0f, 0.0f };
             noises(mt, noise, noise_type, texture, t_index);
 
             // Make candidate color list
             float candError[3] = { 0.0f, 0.0f, 0.0f };
-            Oklab candList[candSize];
+            LinearRGB candList[candSize];
             for (int i = 0; i < candSize; i++) {
-                Oklab attempt = oklab_pixel;
-                attempt.l += candError[0] * noise_amp;
-                attempt.a += candError[1] * noise_amp;
-                attempt.b += candError[2] * noise_amp;
+                LinearRGB attempt;
+                attempt.r = r + candError[0] * noise_amp;
+                attempt.g = g + candError[1] * noise_amp;
+                attempt.b = b + candError[2] * noise_amp;
                 candList[i] = findClosestColor(palette, palette_size, attempt);
-                candError[0] += oklab_pixel.l - candList[i].l;
-                candError[1] += oklab_pixel.a - candList[i].a;
-                candError[2] += oklab_pixel.b - candList[i].b;
+                candError[0] += r - candList[i].r;
+                candError[1] += g - candList[i].g;
+                candError[2] += b - candList[i].b;
             }
 
             // sort by luminance
-            std::sort(candList, candList + candSize, [](const Oklab& a, const Oklab& b) { return a.l < b.l; });
+            std::sort(candList, candList + candSize, [](const LinearRGB& a, const LinearRGB& b) { return rgb_luma(a) < rgb_luma(b) ; });
             int candIndexes[3] = { 0, 0, 0 };
 
             Pixel_RGB useColors[3];
@@ -878,11 +850,11 @@ int oklab_noisy_error_diffusion_custom_palette_dither(lua_State *L) {
                 } else if (candIndexes[i] < 0) {
                     candIndexes[i] = 0;
                 }
-                useColors[i] = oklab2rgb(candList[candIndexes[i]]);
+                useColors[i] = linearRGB2rgb(candList[candIndexes[i]]);
             }
-            error[0] = (pixels[index].r - useColors[0].r) / 255.0f;
-            error[1] = (pixels[index].g - useColors[1].g) / 255.0f;
-            error[2] = (pixels[index].b - useColors[2].b) / 255.0f;
+            error[0] = r - errors[0 + 3 * index] - useColors[0].r / 255.0f;
+            error[1] = g - errors[1 + 3 * index] - useColors[1].g / 255.0f;
+            error[2] = b - errors[2 + 3 * index] - useColors[2].b / 255.0f;
             pixels[index].r = useColors[0].r;
             pixels[index].g = useColors[1].g;
             pixels[index].b = useColors[2].b;
@@ -901,26 +873,22 @@ int oklab_noisy_error_diffusion_custom_palette_dither(lua_State *L) {
 }
 
 // Custom texture dithering (arbitrary color palette version)
-int oklab_custom_texture_palette_dither(lua_State *L) {
+int rgb_custom_texture_palette_dither(lua_State *L) {
     Pixel_RGBA *pixels = reinterpret_cast<Pixel_RGBA*>(lua_touserdata(L, 1));
     int w = static_cast<int>(lua_tointeger(L, 2));
     int h = static_cast<int>(lua_tointeger(L, 3));
-    // LinearRGB *linear_pixels = (LinearRGB*)malloc(sizeof(LinearRGB) * w * h);
-    // Oklab *oklab_pixels = rgba_to_oklab(pixels, w * h);
 
     float noise_amp = static_cast<float>(lua_tonumber(L, 4));
     // array containing palette data is at index 5
     int palette_size = static_cast<int>(lua_tointeger(L, 6));
-    Oklab *palette = (Oklab*)malloc(sizeof(Oklab) * palette_size);
+    LinearRGB *palette = (LinearRGB*)malloc(sizeof(LinearRGB) * palette_size);
     for (int i = 0; i < palette_size; i++) {
         lua_rawgeti(L, 5, i + 1);
         int val = static_cast<int>(lua_tointeger(L, -1));
         lua_pop(L, 1);
-        Pixel_RGB tmp;
-        tmp.r = (val >> 16) & 0xff;
-        tmp.g = (val >> 8) & 0xff;
-        tmp.b = val & 0xff;
-        palette[i] = rgb2oklab(tmp);
+        palette[i].r = ((val >> 16) & 0xff) / 255.0f;
+        palette[i].g = ((val >> 8) & 0xff) / 255.0f;
+        palette[i].b = (val & 0xff) / 255.0f;
     }
     int candSize = static_cast<int>(lua_tointeger(L, 7));
     int do_mixColor = static_cast<int>(lua_tointeger(L, 8));
@@ -977,19 +945,15 @@ int oklab_custom_texture_palette_dither(lua_State *L) {
             float r = pixels[index].r / 255.0f + errors[0 + 3 * index];
             float g = pixels[index].g / 255.0f + errors[1 + 3 * index];
             float b = pixels[index].b / 255.0f + errors[2 + 3 * index];
-            r = min(max(r, 0.0f), 1.0f);
-            g = min(max(g, 0.0f), 1.0f);
-            b = min(max(b, 0.0f), 1.0f);
-            Oklab oklab_pixel = linearRGB2oklab({r, g, b});
 
             // テクスチャ範囲外の場合はもっとも近い色を使い誤差伝播
             if (!use_texture) {
-                Oklab cand = findClosestColor(palette, palette_size, oklab_pixel);
+                LinearRGB cand = findClosestColor(palette, palette_size, {r, g, b});
 
-                Pixel_RGB useColor = oklab2rgb(cand);
-                error[0] = (pixels[index].r - useColor.r) / 255.0f;
-                error[1] = (pixels[index].g - useColor.g) / 255.0f;
-                error[2] = (pixels[index].b - useColor.b) / 255.0f;
+                Pixel_RGB useColor = linearRGB2rgb(cand);
+                error[0] = r - errors[0 + 3 * index] - cand.r;
+                error[1] = g - errors[1 + 3 * index] - cand.g;
+                error[2] = b - errors[2 + 3 * index] - cand.b;
                 pixels[index].r = useColor.r;
                 pixels[index].g = useColor.g;
                 pixels[index].b = useColor.b;
@@ -1001,19 +965,19 @@ int oklab_custom_texture_palette_dither(lua_State *L) {
             // テクスチャ範囲内の場合はテクスチャを使ってディザリング
             // Make candidate color list
             float candError[3] = { 0.0f, 0.0f, 0.0f };
-            Oklab candList[candSize];
+            LinearRGB candList[candSize];
             for (int i = 0; i < candSize; i++) {
-                Oklab attempt = oklab_pixel;
-                attempt.l += candError[0] * noise_amp;
-                attempt.a += candError[1] * noise_amp;
+                LinearRGB attempt = {r, g, b};
+                attempt.r += candError[0] * noise_amp;
+                attempt.g += candError[1] * noise_amp;
                 attempt.b += candError[2] * noise_amp;
                 candList[i] = findClosestColor(palette, palette_size, attempt);
-                candError[0] += oklab_pixel.l - candList[i].l;
-                candError[1] += oklab_pixel.a - candList[i].a;
-                candError[2] += oklab_pixel.b - candList[i].b;
+                candError[0] += r - candList[i].r;
+                candError[1] += g - candList[i].g;
+                candError[2] += b - candList[i].b;
             }
             // sort by luminance
-            std::sort(candList, candList + candSize, [](const Oklab& a, const Oklab& b) { return a.l < b.l; });
+            std::sort(candList, candList + candSize, [](const LinearRGB& a, const LinearRGB& b) { return rgb_luma(a) < rgb_luma(b); });
             int candIndexes[3] = { texture[t_index].r, texture[t_index].r, texture[t_index].r };
             if (do_mixColor == 0) {
                 int use_channel = channel_RAND(mt);
@@ -1030,7 +994,7 @@ int oklab_custom_texture_palette_dither(lua_State *L) {
             if (do_mixColor == 1) {
                 int use_comb = comb_RAND(mt);
                 if (use_comb == 1) {
-                    candIndexes[0] = texture[t_index].r;
+                    // candIndexes[0] = texture[t_index].r;
                     candIndexes[1] = texture[t_index].g;
                     candIndexes[2] = texture[t_index].b;
                 } else if (use_comb == 2) {
@@ -1064,11 +1028,11 @@ int oklab_custom_texture_palette_dither(lua_State *L) {
                 } else if (candIndexes[i] < 0) {
                     candIndexes[i] = 0;
                 }
-                useColors[i] = oklab2rgb(candList[candIndexes[i]]);
+                useColors[i] = linearRGB2rgb(candList[candIndexes[i]]);
             }
-            error[0] = (pixels[index].r - useColors[0].r) / 255.0f;
-            error[1] = (pixels[index].g - useColors[1].g) / 255.0f;
-            error[2] = (pixels[index].b - useColors[2].b) / 255.0f;
+            error[0] = r - errors[0 + 3 * index] - useColors[0].r / 255.0f;
+            error[1] = g - errors[1 + 3 * index] - useColors[0].g / 255.0f;
+            error[2] = b - errors[2 + 3 * index] - useColors[0].b / 255.0f;
             pixels[index].r = useColors[0].r;
             pixels[index].g = useColors[1].g;
             pixels[index].b = useColors[2].b;
@@ -1158,8 +1122,8 @@ int texture_debug(lua_State *L) {
 static luaL_Reg functions[] = {
     { "uniform_palette_dither", noisy_error_diffusion_dither },
     { "uniform_palette_custom_dither", custom_texture_diffusion_dither },
-    { "palette_dither", oklab_noisy_error_diffusion_custom_palette_dither },
-    { "custom_palette_dither", oklab_custom_texture_palette_dither },
+    { "palette_dither", rgb_noisy_error_diffusion_custom_palette_dither },
+    { "custom_palette_dither", rgb_custom_texture_palette_dither },
     { "texture_debug", texture_debug },
     { nullptr, nullptr }
 };

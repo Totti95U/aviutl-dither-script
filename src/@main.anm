@@ -1,15 +1,15 @@
 --[[
-# ç¹ï½¡ç¹ï½¢
---ç¹åŒ»Î›ç¹ï¿½ç¹§ï½¯:èœ·æ¦Šç‡•,è­›Â€èŸ†ä¸Â€ï½¤,è­›Â€èŸï½§è›Ÿï½¤,ç¹ï¿½ç¹è¼”ã‹ç¹ï½«ç¹äº¥Â€ï½¤,ç¹§ï½¹ç¹ï¿½ç¹ï¿½ç¹ï¿½
+# ƒƒ‚
+--ƒgƒ‰ƒbƒN:–¼‘O,Å¬’l,Å‘å’l,ƒfƒtƒHƒ‹ƒg’l,ƒXƒeƒbƒv
 ]]
 ---------------------------------------------------
 @ErrorNoisyDither
 require("rikky_module")
---track0:ç¹å¼±ã†ç¹§ï½ºè ‘ï½·è ï½¦,0,100,100,0.01
---track1:æ¿¶ï½²è¬¨ï½°,2,256,2,1
---track2:ç¹å¼±ã†ç¹§ï½º,0,6,1,1
---track3:è¨æ™„æˆ,0,9,1,1
---dialog:ç¹ï¿½ç¹§ï½¯ç¹§ï½¹ç¹âˆšÎ•ç¹è¼”ã‹ç¹ï½«ç¹Â€, fold=""; ç¹ï¿½ç¹§ï½¯ç¹§ï½¹ç¹âˆšÎ•ç¹§ï½µç¹§ï½¤ç¹§ï½º, t_size=64; ç¹å³¨ãƒ£ç¹åŒ»ã—ç¹§ï½¤ç¹§ï½º, dot_size=1; è¨æ™„æˆè­ï½¹èœ·ï¿½, prop_dir=0; è­ã‚‹ä¿£èŸç‰™å–§/chk, check0=0;
+--track0:ƒmƒCƒY‹­“x,0,100,100,0.01
+--track1:F”,2,256,2,1
+--track2:ƒmƒCƒY,0,6,1,1
+--track3:“`”À,0,9,1,1
+--dialog:ƒeƒNƒXƒ`ƒƒƒtƒHƒ‹ƒ_, fold=""; ƒeƒNƒXƒ`ƒƒƒTƒCƒY, t_size=64; ƒhƒbƒgƒTƒCƒY, dot_size=1; “`”À•ûŒü, prop_dir=0; ŠÔ•Ï‰»/chk, check0=0;
 ---------------------------------------------------
 
 rikky_module.fold(1)
@@ -18,8 +18,8 @@ require("DITHERINGS")
 
 local bool_to_number={ [true]=1, [false]=0 }
 
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", prop_dir)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100/dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100/dot_size, "•âŠÔ‚È‚µ", 1)
 local data, w, h = obj.getpixeldata()
 
 local color_num = obj.track1
@@ -75,16 +75,16 @@ end
 
 obj.putpixeldata(data)
 
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", -prop_dir)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100 * dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", -prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100 * dot_size, "•âŠÔ‚È‚µ", 1)
 ---------------------------------------------------
 @CustomNoiseDither
 require("rikky_module")
---track0:ç¹å¼±ã†ç¹§ï½ºè ‘ï½·è ï½¦,0,100,100,0.01
---track1:Xè ï½§è®“ï¿½,-2000,2000,0,1
---track2:Yè ï½§è®“ï¿½,-2000,2000,0,1
---track3:è«¡ï½¡èŸï½§é‚‡ï¿½,0.01,800.0,100.0,0.01
---dialog:ç¹ï¿½ç¹§ï½¯ç¹§ï½¹ç¹âˆšÎ•, txr=""; ç¹å³¨ãƒ£ç¹åŒ»ã—ç¹§ï½¤ç¹§ï½º, dot_size=1; è¨æ™„æˆè­ï½¹è±•ï¿½, diffusion_type=0; è¨æ™„æˆè­ï½¹èœ·ï¿½, prop_dir=0; æ¿¶ï½²è¬¨ï½°, color_num=2; è³ï½­è ¢ï¿½è ï½§è®“å„¿, center_x=0; è³ï½­è ¢ï¿½è ï½§è®“å…€, center_y=0; ç¹ï½«ç¹ï½¼ç¹åŠ±ï¼†ç¸ºå¸™ï½‹/chk, txr_loop=0; è³ï½­è ¢ï¿½ç¹§å®šï½¡ï½¨é‰ï½º/chk, center_disp=0;
+--track0:ƒmƒCƒY‹­“x,0,100,100,0.01
+--track1:XÀ•W,-2000,2000,0,1
+--track2:YÀ•W,-2000,2000,0,1
+--track3:Šg‘å—¦,0.01,800.0,100.0,0.01
+--dialog:ƒeƒNƒXƒ`ƒƒ, txr=""; ƒhƒbƒgƒTƒCƒY, dot_size=1; “`”À•û–@, diffusion_type=0; “`”À•ûŒü, prop_dir=0; F”, color_num=2; ’†SÀ•WX, center_x=0; ’†SÀ•WY, center_y=0; ƒ‹[ƒv‚³‚¹‚é/chk, txr_loop=0; ’†S‚ğ•\¦/chk, center_disp=0;
 ---------------------------------------------------
 rikky_module.file(1)
 rikky_module.list(3, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
@@ -99,8 +99,8 @@ color_num = math.max(2, color_num)
 
 local t_path = txr
 dot_size = math.max(0.01, dot_size)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100 / dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100 / dot_size, "•âŠÔ‚È‚µ", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", prop_dir)
 local data, w, h = obj.getpixeldata()
 
 local center_x = center_x / dot_size
@@ -110,17 +110,17 @@ DITHERINGS.uniform_palette_custom_dither(data, w, h, noise_amp, color_num, diffu
 
 obj.putpixeldata(data)
 
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", -prop_dir)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100 * dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", -prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100 * dot_size, "•âŠÔ‚È‚µ", 1)
 
 ---------------------------------------------------
 @PaletteDither
 require("rikky_module")
---track0:ç¹å¼±ã†ç¹§ï½ºè ‘ï½·è ï½¦,0,100,100,0.01
---track1:æ¿¶ï½²è›Ÿå‘µï½£æ‡ˆç„š,1,256,8,1
---track2:ç¹å¼±ã†ç¹§ï½º,0,6,1,1
---track3:è¨æ™„æˆ,0,9,1,1
---dialog:ç¹ï¿½ç¹§ï½¯ç¹§ï½¹ç¹âˆšÎ•ç¹è¼”ã‹ç¹ï½«ç¹Â€, fold=""; ç¹ï¿½ç¹§ï½¯ç¹§ï½¹ç¹âˆšÎ•ç¹§ï½µç¹§ï½¤ç¹§ï½º, t_size=64; è´ï½¿ç¸ºï¿½æ¿¶ï½², palette={0x000000, 0xffffff}; ç¹å³¨ãƒ£ç¹åŒ»ã—ç¹§ï½¤ç¹§ï½º, dot_size=1; è¨æ™„æˆè­ï½¹èœ·ï¿½, prop_dir=0; è­ã‚‹ä¿£èŸç‰™å–§/chk, check0=0;
+--track0:ƒmƒCƒY‹­“x,0,100,100,0.01
+--track1:FŒó•â”,1,256,8,1
+--track2:ƒmƒCƒY,0,6,1,1
+--track3:“`”À,0,9,1,1
+--dialog:ƒeƒNƒXƒ`ƒƒƒtƒHƒ‹ƒ_, fold=""; ƒeƒNƒXƒ`ƒƒƒTƒCƒY, t_size=64; g‚¤F, palette={0x000000, 0xffffff}; ƒhƒbƒgƒTƒCƒY, dot_size=1; “`”À•ûŒü, prop_dir=0; ŠÔ•Ï‰»/chk, check0=0;
 ---------------------------------------------------
 
 rikky_module.fold(1)
@@ -129,8 +129,8 @@ require("DITHERINGS")
 
 local bool_to_number={ [true]=1, [false]=0 }
 
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", prop_dir)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100/dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100/dot_size, "•âŠÔ‚È‚µ", 1)
 local data, w, h = obj.getpixeldata()
 
 local candidate_size = obj.track1
@@ -187,16 +187,16 @@ end
 
 obj.putpixeldata(data)
 
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", -prop_dir)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100 * dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", -prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100 * dot_size, "•âŠÔ‚È‚µ", 1)
 ---------------------------------------------------
 @CustomTexturePaletteDither
 require("rikky_module")
---track0:ãƒã‚¤ã‚ºå¼·åº¦,0,100,100,0.01
---track1:Xåº§æ¨™,-2000,2000,0,1
---track2:Yåº§æ¨™,-2000,2000,0,1
---track3:æ‹¡å¤§ç‡,0.01,800.0,100.0,0.01
---dialog:ãƒ†ã‚¯ã‚¹ãƒãƒ£, txr=""; ãƒ‰ãƒƒãƒˆã‚µã‚¤ã‚º, dot_size=1; ä¼æ¬æ–¹æ³•, diffusion_type=0; ä¼æ¬æ–¹å‘, prop_dir=0; ãƒ‘ãƒ¬ãƒƒãƒˆ, palette={0x000000, 0xffffff}; è‰²å€™è£œæ•°, candidate_size=8; è‰²ã‚’æ··ãœã‚‹/chk, mix_color=0; ä¸­å¿ƒåº§æ¨™X, center_x=0; ä¸­å¿ƒåº§æ¨™Y, center_y=0; ãƒ«ãƒ¼ãƒ—ã•ã›ã‚‹/chk, txr_loop=1; ä¸­å¿ƒã‚’è¡¨ç¤º/chk, center_disp=0; æ™‚é–“å¤‰åŒ–/chk, check0=0;
+--track0:ƒmƒCƒY‹­“x,0,100,100,0.01
+--track1:XÀ•W,-2000,2000,0,1
+--track2:YÀ•W,-2000,2000,0,1
+--track3:Šg‘å—¦,0.01,800.0,100.0,0.01
+--dialog:ƒeƒNƒXƒ`ƒƒ, txr=""; ƒhƒbƒgƒTƒCƒY, dot_size=1; “`”À•û–@, diffusion_type=0; “`”À•ûŒü, prop_dir=0; ƒpƒŒƒbƒg, palette={0x000000, 0xffffff}; FŒó•â”, candidate_size=8; F‚ğ¬‚º‚é/chk, mix_color=0; ’†SÀ•WX, center_x=0; ’†SÀ•WY, center_y=0; ƒ‹[ƒv‚³‚¹‚é/chk, txr_loop=1; ’†S‚ğ•\¦/chk, center_disp=0; ŠÔ•Ï‰»/chk, check0=0;
 ---------------------------------------------------
 rikky_module.file(1)
 rikky_module.list(3, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
@@ -214,8 +214,8 @@ local seed = (check0 * (373 * obj.frame * (obj.frame + 19) * (obj.layer + 89)) +
 
 local t_path = txr
 dot_size = math.max(0.01, dot_size)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100 / dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100 / dot_size, "•âŠÔ‚È‚µ", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", prop_dir)
 local data, w, h = obj.getpixeldata()
 
 local center_x = center_x / dot_size
@@ -225,5 +225,5 @@ DITHERINGS.custom_palette_dither(data, w, h, noise_amp, palette, palette_num, ca
 
 obj.putpixeldata(data)
 
-obj.effect("ç¹ï½­ç¹ï½¼ç¹ï¿½ç¹ï½¼ç¹§ï½·ç¹ï½§ç¹ï½³", "90è ï½¦è—æ«ï½»ï½¢", -prop_dir)
-obj.effect("ç¹ï½ªç¹§ï½µç¹§ï½¤ç¹§ï½º", "è«¡ï½¡èŸï½§é‚‡ï¿½", 100 * dot_size, "é™¬æ†ºä¿£ç¸ºï½ªç¸ºï¿½", 1)
+obj.effect("ƒ[ƒe[ƒVƒ‡ƒ“", "90“x‰ñ“]", -prop_dir)
+obj.effect("ƒŠƒTƒCƒY", "Šg‘å—¦", 100 * dot_size, "•âŠÔ‚È‚µ", 1)
