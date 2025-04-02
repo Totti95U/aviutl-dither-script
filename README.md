@@ -32,7 +32,7 @@
 
 **まず始めに [rikky_module](https://hazumurhythm.com/wev/amazon/?script=rikkymodulea2Z) をお使いの AviUtl にインストールしてください。**
 
-その後、Release から最新の zip をダウンロードして解凍してください。
+その後 [Release](https://github.com/Totti95U/aviutl-dither-script/releases/latest) から `ditherScript-vx.y.z` をダウンロードして解凍してください。
 
 解凍したフォルダ内にある `@ditherScript.anm`, `DITHERINGS.dll`, `ditherAssets`フォルダ の3つを AviUtl の `script` フォルダまたはそのサブフォルダにコピーしてください。
 
